@@ -8,10 +8,11 @@ class SpotBoy:
         self.client = ccxt.phemex(
             {"apiKey": api_key, "secret": secret, "enableRateLimit": True}
         )
+        self.markets = self.client.load_markets()
 
     def balance(self, of):
-        """Retrieves balance of token from exchange wallet
+        """Retrieves balance of asset from exchange wallet
 
-        of (String) - Token to retrieve balance for ex. 'BTC'
+        of (String) - Asset to retrieve balance for ex. 'BTC'
         """
         return self.client.fetch_balance()[of]

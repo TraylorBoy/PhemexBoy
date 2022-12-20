@@ -19,8 +19,23 @@ def test_one():
     return True
 
 
+# Test future methods
+def test_two():
+    global client
+
+    position = client.futures_position("ETH/USD:USD")
+    print(position)
+    assert position is not None
+
+    symbols = client.futures_symbols()
+    print(symbols)
+    assert len(symbols) > 0
+
+    return True
+
+
 if __name__ == "__main__":
-    tests = [test_one]
+    tests = [test_one, test_two]
     i = 1
     for test in tests:
         if test():
