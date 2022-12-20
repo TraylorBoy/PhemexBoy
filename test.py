@@ -11,38 +11,16 @@ client = PhemexBoy(os.getenv("KEY"), os.getenv("SECRET"))
 def test_one():
     global client
 
-    bal = client.balance("USD")
-    print(bal)
+    spot_bal = client.balance("USD")
+    futures_bal = client.futures_balance("USD")
 
-    assert bal is not None
-
-    return True
-
-
-# Test market retrieval
-def test_two():
-    global client
-
-    markets = client.markets()
-
-    assert len(markets) > 0
-
-    return True
-
-
-# Test token retrieval
-def test_three():
-    global client
-
-    tokens = client.tokens()
-
-    assert len(tokens) > 0
+    assert spot_bal is not None and futures_bal is not None
 
     return True
 
 
 if __name__ == "__main__":
-    tests = [test_one, test_two, test_three]
+    tests = [test_one]
     i = 1
     for test in tests:
         if test():

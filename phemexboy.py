@@ -1,40 +1,26 @@
-"""Phemex API Wrapper Module"""
+"""Proxy for FutureBoy's and SpotBoy's API Wrapper Module"""
 
 import ccxt
+
+from futureboy import FutureBoy
+from spotboy import SpotBoy
 
 
 class PhemexBoy:
     def __init__(self, api_key, secret):
-        exchange_class = getattr(ccxt, "phemex")
-        self.client = exchange_class({"apiKey": api_key, "secret": secret})
+        self.spot_client = SpotBoy(api_key, secret)
+        self.futures_client = FutureBoy(api_key, secret)
 
     def balance(self, of):
-        """Retrieves balance of token from exchange SPOT wallet
+        """Retrieves balance of token from spot account
 
         of (String) - Token to retrieve balance for ex. 'BTC'
         """
-        return self.client.fetch_balance()[of]["free"]
+        return self.spot_client.balance(of)
 
-    def markets(self):
-        """Retrieve all markets from exchange"""
-        return self.client.load_markets()
+    def futures_balance(self, of):
+        """Retrieves balance of token from futures account
 
-    def tokens(self):
-        """Retrieve all tokens from exchange"""
-        tokens = list(self.markets().keys())
-        tmp = []
-
-        for token in tokens:
-            tmp.append(token.split("/")[0])
-
-        formatted = []
-
-        for token in tmp:
-            if not token.startswith("1"):
-                formatted.append(token)
-
-        return formatted
-
-    def order(self):
-        """Retrieve all accounts from exchange"""
-        return self.client.has
+        of (String) - Token to retrieve balance for ex. 'BTC'
+        """
+        return self.futures_client.balance(of)
