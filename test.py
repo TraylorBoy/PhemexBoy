@@ -7,35 +7,50 @@ from dotenv import load_dotenv
 load_dotenv()
 client = PhemexBoy(os.getenv("KEY"), os.getenv("SECRET"))
 
-# Test balance
-def test_one():
+print(client.client.has)
+
+# Test PhemexBoy
+def test_spot():
     global client
 
-    spot_bal = client.balance("USD")
-    futures_bal = client.futures_balance("USD")
-
-    assert spot_bal is not None and futures_bal is not None
-
-    return True
-
-
-# Test future methods
-def test_two():
-    global client
-
-    position = client.futures_position("ETH/USD:USD")
-    print(position)
-    assert position is not None
-
-    symbols = client.futures_symbols()
-    print(symbols)
+    # Test SPOT Properties
+    symbols = client.symbols()
     assert len(symbols) > 0
+
+    currencies = client.currencies()
+    assert len(currencies) > 0
+
+    timeframes = client.timeframes()
+    assert len(timeframes) > 0
+
+    time = client.time("2022-12-22T00:00:00Z")
+    assert time is not None
+
+    # Test SPOT Methods
+    orderbook = client.orderbook("sBTCUSDT")
+    assert len(orderbook) > 0
+
+    price = client.price("sBTCUSDT")
+    assert len(price) > 0
+
+    day_candle = client.candle("sBTCUSDT", "1d")
+    candle = client.candle("sBTCUSDT", "1d", since=client.time("2022-12-22T00:00:00Z"))
+    assert len(day_candle) > 0
+    assert len(candle) > 0
+
+    trades = client.trades("sBTCUSDT")
+    day_trades = client.trades("sBTCUSDT", client.time("2022-12-22T00:00:00Z"))
+    assert len(trades) > 0
+    assert len(day_trades) > 0
+
+    status = client.status()
+    assert len(status) > 0
 
     return True
 
 
 if __name__ == "__main__":
-    tests = [test_one, test_two]
+    tests = [test_spot]
     i = 1
     for test in tests:
         if test():
