@@ -1,4 +1,5 @@
-"""Proxy for FutureBoy's and SpotBoy's API Wrapper Module"""
+"""API Wrapper Module"""
+__version__ = "1.0.0"
 
 import ccxt
 
@@ -10,9 +11,11 @@ class PhemexBoy:
         self.client = ccxt.phemex(
             {"apiKey": api_key, "secret": secret, "enableRateLimit": True}
         )
-        self.bot = BotBoy(name="PhemexBot", silent=True)
+        self.bot = BotBoy(name="PhemexBot")
+        self.position = None
 
     # ------------------------------- Class Methods ------------------------------- #
+
     def _load(self):
         """Loads market utilizing BotBoy"""
         self.bot.task = self.client.load_markets
@@ -29,66 +32,6 @@ class PhemexBoy:
         return self.bot.result
 
     # ------------------------------- Utility Methods ------------------------------- #
-
-    def time(self, format):
-        """Create a timestamp from the following format (uses
-        parse8601)
-
-        format (String) - Date to create time representation from (ex. 2022-12-22T00:00:00Z)
-        """
-        return self.client.parse8601(format)
-
-    def timeframes(self):
-        """Retrieve all available timeframes from exchange"""
-        return self.client.timeframes
-
-    def symbols(self):
-        """Retrieve all SPOT asset symbols from exchange"""
-        return [
-            "sBTCUSDT",
-            "sETHUSDT",
-            "sXRPUSDT",
-            "sLINKUSDT",
-            "sXTZUSDT",
-            "sLTCUSDT",
-            "sADAUSDT",
-            "sTRXUSDT",
-            "sONTUSDT",
-            "sBCHUSDT",
-            "sNEOUSDT",
-            "sEOSUSDT",
-            "sDOGEUSDT",
-            "sBATUSDT",
-            "sCHZUSDT",
-            "sMANAUSDT",
-            "sENJUSDT",
-            "sSUSHIUSDT",
-            "sSNXUSDT",
-            "sGRTUSDT",
-            "sUNIUSDT",
-            "sAAVEUSDT",
-            "sYFIUSDT",
-            "sCOMPUSDT",
-            "sMKRUSDT",
-            "sDOTUSDT",
-            "sALGOUSDT",
-            "sVETUSDT",
-            "sZECUSDT",
-            "sFILUSDT",
-            "sKSMUSDT",
-            "sXMRUSDT",
-            "sQTUMUSDT",
-            "sXLMUSDT",
-            "sATOMUSDT",
-            "sLUNAUSDT",
-            "sSOLUSDT",
-            "sAXSUSDT",
-            "sMATICUSDT",
-            "sSHIBUSDT",
-            "sFTMUSDT",
-            "sDYDXUSDT",
-            "sVPADUSDT",
-        ]
 
     def currencies(self):
         """Retrieve all assets available from exchange"""
@@ -140,81 +83,255 @@ class PhemexBoy:
             "VPAD",
         ]
 
-    # ------------------------------- SPOT Methods ------------------------------- #
-
-    # Public API Methods
-    def orderbook(self, symbol):
-        """Get SPOT orderbook of asset from exchange
-
-        symbol (String) - Pairing to retrieve orderbook for (ex. sBTCUSDT)
-        """
-        return self._bot(self.client.fetch_order_book, symbol)
-
     def price(self, symbol):
         """Retrieve SPOT price of asset
 
         symbol (String) - Pairing to retrieve price for (ex. sBTCUSDT)
         """
-        return self._bot(self.client.fetch_ticker, symbol)
+        return self._bot(self.client.fetch_ticker, symbol)["last"]
 
-    def candle(self, symbol, tf, since=None):
-        """Retrieve OHLCV of asset
+    # ------------------------------- SPOT Methods ------------------------------- #
 
-        symbol (String) - Pair to retrieve OHLCV for (ex. sBTCUSDT)
-        tf (String) - The timeframe to create candle for
-        since (Integer) - How many candles to retrieve from supplied date
-        """
-        if since:
-            return self._bot(self.client.fetch_ohlcv, symbol, tf, since)
-        else:
-            return self._bot(self.client.fetch_ohlcv, symbol, tf)
-
-    def trades(self, symbol, since=None):
-        """Retrieve trade data for specified pair
-
-        symbol (String) - Pair to retrieve trade data for (ex. sBTCUSDT)
-        since (String) - Timestamp to start fetching from
-        """
-        if since:
-            return self._bot(self.client.fetch_trades, symbol, since)
-        else:
-            return self._bot(self.client.fetch_trades, symbol)
-
-    def status(self):
-        """Retrieve exchange status"""
-        return self._bot(self.client.fetch_status)
+    def symbols(self):
+        """Retrieve all SPOT asset symbols from exchange"""
+        return [
+            "sBTCUSDT",
+            "sETHUSDT",
+            "sXRPUSDT",
+            "sLINKUSDT",
+            "sXTZUSDT",
+            "sLTCUSDT",
+            "sADAUSDT",
+            "sTRXUSDT",
+            "sONTUSDT",
+            "sBCHUSDT",
+            "sNEOUSDT",
+            "sEOSUSDT",
+            "sDOGEUSDT",
+            "sBATUSDT",
+            "sCHZUSDT",
+            "sMANAUSDT",
+            "sENJUSDT",
+            "sSUSHIUSDT",
+            "sSNXUSDT",
+            "sGRTUSDT",
+            "sUNIUSDT",
+            "sAAVEUSDT",
+            "sYFIUSDT",
+            "sCOMPUSDT",
+            "sMKRUSDT",
+            "sDOTUSDT",
+            "sALGOUSDT",
+            "sVETUSDT",
+            "sZECUSDT",
+            "sFILUSDT",
+            "sKSMUSDT",
+            "sXMRUSDT",
+            "sQTUMUSDT",
+            "sXLMUSDT",
+            "sATOMUSDT",
+            "sLUNAUSDT",
+            "sSOLUSDT",
+            "sAXSUSDT",
+            "sMATICUSDT",
+            "sSHIBUSDT",
+            "sFTMUSDT",
+            "sDYDXUSDT",
+            "sVPADUSDT",
+        ]
 
     def balance(self, of):
         """Retrieve SPOT account balance for specified asset
 
         of (String) - Asset to retrieve balance for (ex. BTC)
         """
-        pass
+        return self._bot(self.client.fetch_balance)[of]["free"]
+
+    def usdt_converter(self, symbol, percent):
+        """Returns the percentage of your account that you would like to use when trading symbol
+
+        symbol (String) - Trading symbol to perform calculations for (ex. sBTCUSDT)
+        percent (Integer) - Percent of account that you would like to use while trading
+        """
+        bal = self.balance("USDT")
+        price = self.price(symbol)
+        amount = (bal / price) * (percent / 100)
+        return round(amount, 6)
+
+    def buy(self, symbol, type, amount, price=None):
+        """Place a buy order
+
+        symbol (String) - Pairing to place order for
+        type (String) - Either 'market' or 'limit'
+        amount (Float) - Amount of currency to use for order
+        price (Float) - Price to place limit order at
+        """
+        # Format
+        if price is not None:
+            price = round(price, 2)
+
+        return self._bot(self.client.create_order, symbol, type, "buy", amount, price)[
+            "info"
+        ]["orderID"]
+
+    def sell(self, symbol, type, amount, price=None):
+        """Place a sell order
+
+        symbol (String) - Pairing to place order for
+        type (String) - Either 'market' or 'limit'
+        amount (Integer) - Amount of currency to use for order
+        price (Float) - Price to place limit order at
+        """
+        # Format
+        if price is not None:
+            price = round(price, 2)
+
+        return self._bot(self.client.create_order, symbol, type, "sell", amount, price)[
+            "info"
+        ]["orderID"]
 
     # ------------------------------- FUTURE Methods ------------------------------- #
 
-    def leverage_tiers(self, symbol):
-        """Retrieve leverage data from futures
+    def future_symbols(self):
+        """Retrieve all symbols from futures market"""
+        self.client.load_markets()
+        symbols = []
+        for symbol in self.client.symbols:
+            if ":" in symbol:
+                symbols.append(symbol)
+        return symbols
 
-        symbol (String) - The pair to retrieve leverage data for (ex. BTC/USD:USD)
+    def future_balance(self, of):
+        """Retrieve FUTURE account balance for specified asset
+
+        of (String) - Asset to retrieve balance for (ex. BTC)
         """
-        return self._bot(self.client.fetch_leverage_tiers, symbol)
+        params = {"type": "swap", "code": "USD"}
+        return self._bot(self.client.fetch_balance, params)[of]["free"]
 
-    def funding_rate(self, symbol):
-        """Retrieve funding rate data from futures
+    def leverage(self, amount, symbol):
+        """Set leverage
 
-        symbol (String) - The pair to retrieve funding rate data for (ex. BTC/USD:USD)
+        amount (Integer) - Leverage to set to
+        symbol (String) - Symbol to set the leverage for
         """
-        return self._bot(self.client.fetch_funding_rate, symbol)
+        return self._bot(self.client.set_leverage, amount, symbol)
 
-    def funding_rate_history(self, symbol, since=None):
-        """Retrieve funding rate history from futures
+    def long(self, symbol, type, amount, price=None, sl=None, tp=None):
+        """Open a long position
 
-        symbol (String) - The pair to retrieve funding rate data for (ex.
-        BTC/USD:USD)
-        since (String) - How far back to retrieve funding rate data
+        symbol (String) - Pairing to place order for
+        type (String) - Either 'market' or 'limit'
+        amount (Float) - Amount of currency to use for order
+        price (Float) - Price to open position at for limit orders
+        sl (Float) - Price to trigger stop loss
+        tp (Float) - Price to trigger take profit
         """
-        if since:
-            return self._bot(self.client.fetch_funding_rate, symbol, since)
+        if not self.position:
+            self.position = "long"
+
+        # Format
+        if price is not None:
+            price = round(price, 2)
+        if sl is not None:
+            sl = round(sl, 2)
+        if tp is not None:
+            tp = round(tp, 2)
+
+        if sl and tp:
+            params = {
+                "type": "swap",
+                "code": "USD",
+                "stopLossPrice": sl,
+                "takeProfitPrice": tp,
+            }
+            return self._bot(
+                self.client.create_order, symbol, type, "buy", amount, price, params
+            )["info"]["orderID"]
+        elif sl and not tp:
+            params = {"type": "swap", "code": "USD", "stopLossPrice": sl}
+            return self._bot(
+                self.client.create_order, symbol, type, "buy", amount, price, params
+            )["info"]["orderID"]
+        elif tp and not sl:
+            params = {"type": "swap", "code": "USD", "takeProfitPrice": tp}
+            return self._bot(
+                self.client.create_order, symbol, type, "buy", amount, price, params
+            )["info"]["orderID"]
         else:
-            return self._bot(self.client.fetch_funding_rate, symbol)
+            params = {"type": "swap", "code": "USD"}
+            return self._bot(
+                self.client.create_order, symbol, type, "buy", amount, price, params
+            )["info"]["orderID"]
+
+    def short(self, symbol, type, amount, price=None, sl=None, tp=None):
+        """Open a short position
+
+        symbol (String) - Pairing to place order for
+        type (String) - Either 'market' or 'limit'
+        amount (Float) - Amount of currency to use for order
+        price (Float) - Price to open position at for limit orders
+        sl (Float) - Price to trigger stop loss
+        tp (Float) - Price to trigger take profit
+        """
+        if not self.position:
+            self.position = "short"
+        # Format
+        if price is not None:
+            price = round(price, 2)
+        if sl is not None:
+            sl = round(sl, 2)
+        if tp is not None:
+            tp = round(tp, 2)
+
+        if sl and tp:
+            params = {
+                "type": "swap",
+                "code": "USD",
+                "stopLossPrice": sl,
+                "takeProfitPrice": tp,
+            }
+            return self._bot(
+                self.client.create_order, symbol, type, "sell", amount, price, params
+            )["info"]["orderID"]
+        elif sl and not tp:
+            params = {"type": "swap", "code": "USD", "stopLossPrice": sl}
+            return self._bot(
+                self.client.create_order, symbol, type, "sell", amount, price, params
+            )["info"]["orderID"]
+        elif tp and not sl:
+            params = {"type": "swap", "code": "USD", "takeProfitPrice": tp}
+            return self._bot(
+                self.client.create_order, symbol, type, "sell", amount, price, params
+            )["info"]["orderID"]
+        else:
+            params = {"type": "swap", "code": "USD"}
+            return self._bot(
+                self.client.create_order, symbol, type, "sell", amount, price, params
+            )["info"]["orderID"]
+
+    def close(self, symbol, amount):
+        """Closes open position"""
+        if self.position == "long":
+            self.short(symbol, "market", amount)
+            self.position = None
+        if self.position == "short":
+            self.long(symbol, "market", amount)
+            self.position = None
+
+    # --------------------------- SPOT & FUTURE Methods -------------------------- #
+
+    def cancel(self, id, symbol):
+        """Cancel an open order
+
+        id (String) - Order ID to cancel
+        symbol (String) - Pairing that the order is tied to (ex. sBTCUSDT)
+        """
+        return self._bot(self.client.cancel_order, id, symbol)["info"]["orderID"]
+
+    def cancel_all(self, symbol):
+        """Cancel all open orders
+
+        symbol (String) - Pairing to cancel all open orders for (ex. sBTCUSDT)
+        """
+        return self._bot(self.client.cancel_all_orders, symbol)

@@ -7,50 +7,83 @@ from dotenv import load_dotenv
 load_dotenv()
 client = PhemexBoy(os.getenv("KEY"), os.getenv("SECRET"))
 
-print(client.client.has)
 
-# Test PhemexBoy
-def test_spot():
+def test_utilities():
     global client
-
-    # Test SPOT Properties
-    symbols = client.symbols()
-    assert len(symbols) > 0
 
     currencies = client.currencies()
     assert len(currencies) > 0
 
-    timeframes = client.timeframes()
-    assert len(timeframes) > 0
-
-    time = client.time("2022-12-22T00:00:00Z")
-    assert time is not None
-
-    # Test SPOT Methods
-    orderbook = client.orderbook("sBTCUSDT")
-    assert len(orderbook) > 0
-
     price = client.price("sBTCUSDT")
-    assert len(price) > 0
+    assert price > 0
 
-    day_candle = client.candle("sBTCUSDT", "1d")
-    candle = client.candle("sBTCUSDT", "1d", since=client.time("2022-12-22T00:00:00Z"))
-    assert len(day_candle) > 0
-    assert len(candle) > 0
+    return True
 
-    trades = client.trades("sBTCUSDT")
-    day_trades = client.trades("sBTCUSDT", client.time("2022-12-22T00:00:00Z"))
-    assert len(trades) > 0
-    assert len(day_trades) > 0
 
-    status = client.status()
-    assert len(status) > 0
+def test_spot():
+    global client
+
+    symbols = client.symbols()
+    assert len(symbols) > 0
+
+    balance = client.balance("USDT")
+    assert balance is not None
+
+    amt = client.usdt_converter("sBTCUSDT", 21)
+    price = client.price("sBTCUSDT") * 0.50
+    id = client.buy("sBTCUSDT", "limit", amt, price)
+    assert id is not None
+
+    id = client.cancel(id, "sBTCUSDT")
+    assert id is not None
+
+    amt = client.usdt_converter("sBTCUSDT", 21)
+    price = client.price("sBTCUSDT") * 0.50
+    id = client.buy("sBTCUSDT", "limit", amt, price)
+    assert id is not None
+
+    resp = client.cancel_all("sBTCUSDT")
+    assert resp is not None
+
+    amt = client.usdt_converter("sBTCUSDT", 90)
+    client.buy("sBTCUSDT", "market", amt)
+
+    amt = client.balance("BTC")
+    id = client.sell("sBTCUSDT", "market", amt)
+    assert id is not None
+
+    return True
+
+
+def test_future():
+    global client
+
+    symbols = client.future_symbols()
+    print(symbols)
+
+    bal = client.future_balance("USD")
+    assert bal is not None
+
+    price = client.price("BTC/USD:USD") * 0.50
+    sl = price - (price * 0.01)
+    tp = price + (price * 0.02)
+    id = client.long("BTC/USD:USD", "limit", 1, price, sl, tp)
+    assert id is not None
+    assert client.cancel(id, "BTC/USD:USD") is not None
+
+    # Manual Test
+    client.leverage(10, "BTC/USD:USD")
+    id = client.long("BTC/USD:USD", "market", 1)
+    client.close("BTC/USD:USD", 1)
+    id = client.short("BTC/USD:USD", "market", 1)
+    client.close("BTC/USD:USD", 1)
 
     return True
 
 
 if __name__ == "__main__":
-    tests = [test_spot]
+    tests = [test_utilities, test_spot, test_future]
+
     i = 1
     for test in tests:
         if test():
