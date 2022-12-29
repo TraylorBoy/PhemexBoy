@@ -59,7 +59,7 @@ def test_future():
     global client
 
     symbols = client.future_symbols()
-    print(symbols)
+    assert len(symbols) > 0
 
     bal = client.future_balance("USD")
     assert bal is not None
