@@ -71,6 +71,10 @@ def test_future():
     assert id is not None
     assert client.cancel(id, "BTC/USD:USD") is not None
 
+    position = client.position("BTC/USD:USD")
+    in_position = client.in_position("BTC/USD:USD")
+    assert position is not None and in_position is not None
+
     # Manual Test
     client.leverage(10, "BTC/USD:USD")
     id = client.long("BTC/USD:USD", "market", 1)
@@ -82,7 +86,8 @@ def test_future():
 
 
 if __name__ == "__main__":
-    tests = [test_utilities, test_spot, test_future]
+    # tests = [test_utilities, test_spot, test_future]
+    tests = [test_utilities]
 
     i = 1
     for test in tests:

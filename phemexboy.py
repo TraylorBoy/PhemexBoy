@@ -1,5 +1,5 @@
 """API Wrapper Module"""
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 import ccxt
 
@@ -88,7 +88,7 @@ class PhemexBoy:
 
         symbol (String) - Pairing to retrieve price for (ex. sBTCUSDT)
         """
-        return self._bot(self.client.fetch_ticker, symbol)["last"]
+        return self._bot(self.client.fetch_order_book, symbol)["asks"][0][0]
 
     # ------------------------------- SPOT Methods ------------------------------- #
 
@@ -318,6 +318,25 @@ class PhemexBoy:
         if self.position == "short":
             self.long(symbol, "market", amount)
             self.position = None
+
+    def position(self, symbol):
+        """Returns future account positions
+
+        symbol (String) - The symbol to retrieve position for (ex. BTC/USD:USD)
+        """
+        pos = self._bot(self.client.fetch_positions)
+
+        for position in pos:
+            if position["symbol"] == symbol:
+                return position
+
+    def in_position(self, symbol):
+        """Returns true if currently in position for symbol, false otherwise
+
+        symbol (String) - The symbol to check if in position for (ex. BTC/USD:USD)
+        """
+
+        return self.positions(symbol)["contracts"] > 0
 
     # --------------------------- SPOT & FUTURE Methods -------------------------- #
 

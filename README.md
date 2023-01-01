@@ -118,6 +118,12 @@ order_id = client.short(symbol='BTC/USD:USD', type='market', amount=1)
 client.close(symbol='BTC/USD:USD', amount=1)
 ```
 
+### Check Position Status
+```
+client.position(symbol='BTC/USD:USD') # Returns position information
+client.in_position(symbol='BTC/USD:USD') # Returns if in a position or not
+```
+
 ## Test
 
 - Runs the tests on the PhemexBoy module
