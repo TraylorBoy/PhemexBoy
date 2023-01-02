@@ -71,7 +71,7 @@ def test_future():
     assert id is not None
     assert client.cancel(id, "BTC/USD:USD") is not None
 
-    position = client.position("BTC/USD:USD")
+    position = client.positions("BTC/USD:USD")
     in_position = client.in_position("BTC/USD:USD")
     assert position is not None and in_position is not None
 

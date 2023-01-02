@@ -1,5 +1,5 @@
 """API Wrapper Module"""
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 
 import ccxt
 
@@ -319,7 +319,7 @@ class PhemexBoy:
             self.long(symbol, "market", amount)
             self.position = None
 
-    def position(self, symbol):
+    def positions(self, symbol):
         """Returns future account positions
 
         symbol (String) - The symbol to retrieve position for (ex. BTC/USD:USD)
