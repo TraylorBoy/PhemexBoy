@@ -120,7 +120,7 @@ client.close(symbol='BTC/USD:USD', amount=1)
 
 ### Check Position Status
 ```
-client.position(symbol='BTC/USD:USD') # Returns position information
+client.positions(symbol='BTC/USD:USD') # Returns position information
 client.in_position(symbol='BTC/USD:USD') # Returns if in a position or not
 ```
 
