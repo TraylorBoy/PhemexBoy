@@ -14,7 +14,17 @@ pip install phemexboy
 ```
 
 ## Usage
-### Instantiate with API Key and Secret obtained from Phemex
+### Instantiate PublicClient
+- Public methods include:
+- price(symbol)
+- currencies()
+- symbols()
+- future_symbols()
+```
+from phemexboy import PhemexBoy
+pub_client = PhemexBoy()
+```
+### Instantiate AuthClient with API Key and Secret obtained from Phemex
 - Use *python-dotenv* package for security
 ```
 import os
