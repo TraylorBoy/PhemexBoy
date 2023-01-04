@@ -9,6 +9,7 @@ from botboy import BotBoy
 # TODO: Add errors
 # TODO: Interface for public and private clients
 # TODO: Add examples for public methods to README
+# TODO: Separate public and auth clients to separate classes
 
 
 class PhemexBoy:
