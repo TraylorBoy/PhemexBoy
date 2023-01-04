@@ -8,23 +8,29 @@ load_dotenv()
 client = PhemexBoy(os.getenv("KEY"), os.getenv("SECRET"))
 
 
-def test_utilities():
-    global client
+def test_public():
+    client = PhemexBoy()
+
+    future_symbols = client.future_symbols()
+    assert len(future_symbols) > 0
+
+    spot_symbols = client.symbols()
+    assert len(spot_symbols) > 0
 
     currencies = client.currencies()
     assert len(currencies) > 0
 
-    price = client.price("sBTCUSDT")
-    assert price > 0
+    spot_price = client.price("sBTCUSDT")
+    assert spot_price > 0
+
+    future_price = client.price("BTC/USD:USD")
+    assert future_price > 0
 
     return True
 
 
 def test_spot():
     global client
-
-    symbols = client.symbols()
-    assert len(symbols) > 0
 
     balance = client.balance("USDT")
     assert balance is not None
@@ -58,9 +64,6 @@ def test_spot():
 def test_future():
     global client
 
-    symbols = client.future_symbols()
-    assert len(symbols) > 0
-
     bal = client.future_balance("USD")
     assert bal is not None
 
@@ -86,8 +89,8 @@ def test_future():
 
 
 if __name__ == "__main__":
-    # tests = [test_utilities, test_spot, test_future]
-    tests = [test_utilities]
+    # tests = [test_public, test_spot, test_future]
+    tests = [test_public]
 
     i = 1
     for test in tests:

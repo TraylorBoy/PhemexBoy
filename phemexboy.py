@@ -1,24 +1,35 @@
 """API Wrapper Module"""
-__version__ = "1.1.2"
+__version__ = "1.2.1"
 
 import ccxt
 
 from botboy import BotBoy
 
+# TODO: Refactor
+# TODO: Change currencies to pub_client property
+
 
 class PhemexBoy:
-    def __init__(self, api_key, secret):
-        self.client = ccxt.phemex(
-            {"apiKey": api_key, "secret": secret, "enableRateLimit": True}
-        )
+    def __init__(self, api_key=None, secret=None):
+        self.pub_client = ccxt.phemex({"enableRateLimit": True})
         self.bot = BotBoy(name="PhemexBot")
         self.position = None
+        self.client = None
+
+        # Init auth client
+        if api_key and secret:
+            self.client = ccxt.phemex(
+                {"apiKey": api_key, "secret": secret, "enableRateLimit": True}
+            )
 
     # ------------------------------- Class Methods ------------------------------- #
 
     def _load(self):
         """Loads market utilizing BotBoy"""
-        self.bot.task = self.client.load_markets
+        if self.client:
+            self.bot.task = self.client.load_markets
+        else:
+            self.bot.task = self.pub_client.load_markets
         self.bot.execute(True, wait=True)
 
     def _bot(self, task, *args, wait=True):
@@ -31,7 +42,71 @@ class PhemexBoy:
             self.bot.execute(wait=wait)
         return self.bot.result
 
-    # ------------------------------- Utility Methods ------------------------------- #
+    # ------------------------------ Public Methods ------------------------------ #
+
+    def future_symbols(self):
+        """Retrieve all symbols from futures market"""
+        self.pub_client.load_markets()
+        symbols = []
+        for symbol in self.pub_client.symbols:
+            if ":" in symbol:
+                symbols.append(symbol)
+        return symbols
+
+    def symbols(self):
+        """Retrieve all SPOT asset symbols from exchange"""
+        return [
+            "sBTCUSDT",
+            "sETHUSDT",
+            "sXRPUSDT",
+            "sLINKUSDT",
+            "sXTZUSDT",
+            "sLTCUSDT",
+            "sADAUSDT",
+            "sTRXUSDT",
+            "sONTUSDT",
+            "sBCHUSDT",
+            "sNEOUSDT",
+            "sEOSUSDT",
+            "sDOGEUSDT",
+            "sBATUSDT",
+            "sCHZUSDT",
+            "sMANAUSDT",
+            "sENJUSDT",
+            "sSUSHIUSDT",
+            "sSNXUSDT",
+            "sGRTUSDT",
+            "sUNIUSDT",
+            "sAAVEUSDT",
+            "sYFIUSDT",
+            "sCOMPUSDT",
+            "sMKRUSDT",
+            "sDOTUSDT",
+            "sALGOUSDT",
+            "sVETUSDT",
+            "sZECUSDT",
+            "sFILUSDT",
+            "sKSMUSDT",
+            "sXMRUSDT",
+            "sQTUMUSDT",
+            "sXLMUSDT",
+            "sATOMUSDT",
+            "sLUNAUSDT",
+            "sSOLUSDT",
+            "sAXSUSDT",
+            "sMATICUSDT",
+            "sSHIBUSDT",
+            "sFTMUSDT",
+            "sDYDXUSDT",
+            "sVPADUSDT",
+        ]
+
+    def price(self, symbol):
+        """Retrieve SPOT price of asset
+
+        symbol (String) - Pairing to retrieve price for (ex. sBTCUSDT)
+        """
+        return self._bot(self.pub_client.fetch_order_book, symbol)["asks"][0][0]
 
     def currencies(self):
         """Retrieve all assets available from exchange"""
@@ -83,62 +158,7 @@ class PhemexBoy:
             "VPAD",
         ]
 
-    def price(self, symbol):
-        """Retrieve SPOT price of asset
-
-        symbol (String) - Pairing to retrieve price for (ex. sBTCUSDT)
-        """
-        return self._bot(self.client.fetch_order_book, symbol)["asks"][0][0]
-
     # ------------------------------- SPOT Methods ------------------------------- #
-
-    def symbols(self):
-        """Retrieve all SPOT asset symbols from exchange"""
-        return [
-            "sBTCUSDT",
-            "sETHUSDT",
-            "sXRPUSDT",
-            "sLINKUSDT",
-            "sXTZUSDT",
-            "sLTCUSDT",
-            "sADAUSDT",
-            "sTRXUSDT",
-            "sONTUSDT",
-            "sBCHUSDT",
-            "sNEOUSDT",
-            "sEOSUSDT",
-            "sDOGEUSDT",
-            "sBATUSDT",
-            "sCHZUSDT",
-            "sMANAUSDT",
-            "sENJUSDT",
-            "sSUSHIUSDT",
-            "sSNXUSDT",
-            "sGRTUSDT",
-            "sUNIUSDT",
-            "sAAVEUSDT",
-            "sYFIUSDT",
-            "sCOMPUSDT",
-            "sMKRUSDT",
-            "sDOTUSDT",
-            "sALGOUSDT",
-            "sVETUSDT",
-            "sZECUSDT",
-            "sFILUSDT",
-            "sKSMUSDT",
-            "sXMRUSDT",
-            "sQTUMUSDT",
-            "sXLMUSDT",
-            "sATOMUSDT",
-            "sLUNAUSDT",
-            "sSOLUSDT",
-            "sAXSUSDT",
-            "sMATICUSDT",
-            "sSHIBUSDT",
-            "sFTMUSDT",
-            "sDYDXUSDT",
-            "sVPADUSDT",
-        ]
 
     def balance(self, of):
         """Retrieve SPOT account balance for specified asset
@@ -191,15 +211,6 @@ class PhemexBoy:
         ]["orderID"]
 
     # ------------------------------- FUTURE Methods ------------------------------- #
-
-    def future_symbols(self):
-        """Retrieve all symbols from futures market"""
-        self.client.load_markets()
-        symbols = []
-        for symbol in self.client.symbols:
-            if ":" in symbol:
-                symbols.append(symbol)
-        return symbols
 
     def future_balance(self, of):
         """Retrieve FUTURE account balance for specified asset
