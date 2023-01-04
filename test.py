@@ -26,6 +26,19 @@ def test_public():
     future_price = client.price("BTC/USD:USD")
     assert future_price > 0
 
+    assert "1m" in client.timeframes()
+    assert len(client.ohlcv(symbol="BTC/USD:USD", tf="1m")) > 0
+    assert (
+        len(
+            client.ohlcv(
+                symbol="BTC/USD:USD",
+                tf="1m",
+                since=client.timestamp("2021-12-29"),
+            )
+        )
+        > 0
+    )
+
     return True
 
 

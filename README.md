@@ -15,11 +15,14 @@ pip install phemexboy
 
 ## Usage
 ### Instantiate PublicClient
-- Public methods include:
+Public methods include:
 - price(symbol)
 - currencies()
 - symbols()
 - future_symbols()
+- ohlcv(symbol, tf, since)
+- timeframes()
+- timestamp(date)
 ```
 from phemexboy import PhemexBoy
 pub_client = PhemexBoy()

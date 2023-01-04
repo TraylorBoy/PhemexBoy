@@ -1,11 +1,14 @@
 """API Wrapper Module"""
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 
 import ccxt
 
 from botboy import BotBoy
 
 # TODO: Refactor
+# TODO: Add errors
+# TODO: Interface for public and private clients
+# TODO: Add examples for public methods to README
 
 
 class PhemexBoy:
@@ -110,6 +113,29 @@ class PhemexBoy:
     def currencies(self):
         """Retrieve all assets available from exchange"""
         return list(self.pub_client.currencies.keys())
+
+    def ohlcv(self, symbol, tf, since=None):
+        """Retrieve the open - high - low - close - volume data from exchange
+
+        symbol (String) - Pairing to retrieve OHLCV data for
+        tf (String) - Timeframe for OHLCV data
+        since (UTC Timestamp) - Optional start date for retrieving OHLCV data
+        (requires UTC timestamp)
+        """
+        limit = 1000
+        return self._bot(self.pub_client.fetch_ohlcv, symbol, tf, since, limit)
+
+    def timeframes(self):
+        """Retrieve all timeframes available"""
+        return self.pub_client.timeframes
+
+    def timestamp(self, date):
+        """Creates UTC timestamp from date
+
+        date (String) - Date to convert to timestamp, YEAR-MONTH-DAY (ex. 2018-12-01)
+        """
+        formatted_date = date + "T00:00:00Z"
+        return self.pub_client.parse8601(formatted_date)
 
     # ------------------------------- SPOT Methods ------------------------------- #
 
