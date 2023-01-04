@@ -1,5 +1,5 @@
 """API Wrapper Module"""
-__version__ = "1.3.0"
+__version__ = "1.4.0"
 
 import ccxt
 
@@ -10,6 +10,7 @@ from botboy import BotBoy
 # TODO: Interface for public and private clients
 # TODO: Add examples for public methods to README
 # TODO: Separate public and auth clients to separate classes
+# TODO: Add logging
 
 
 class PhemexBoy:
@@ -235,6 +236,8 @@ class PhemexBoy:
                 "code": "USD",
                 "stopLossPrice": sl,
                 "takeProfitPrice": tp,
+                "slTrigger": "ByLastPrice",
+                "tpTrigger": "ByLastPrice",
             }
             return self._bot(
                 self.client.create_order, symbol, type, "buy", amount, price, params
@@ -281,6 +284,8 @@ class PhemexBoy:
                 "code": "USD",
                 "stopLossPrice": sl,
                 "takeProfitPrice": tp,
+                "slTrigger": "ByLastPrice",
+                "tpTrigger": "ByLastPrice",
             }
             return self._bot(
                 self.client.create_order, symbol, type, "sell", amount, price, params

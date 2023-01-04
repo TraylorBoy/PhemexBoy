@@ -7,6 +7,7 @@ Phemex API Wrapper in Python
 - Use spot symbols for buy and sell and future symbols for long and short
 - Spot uses USDT and future uses USD
 - Currently future methods only work for USD future account
+- Contracts close by last price
 
 ## Installation
 ```
