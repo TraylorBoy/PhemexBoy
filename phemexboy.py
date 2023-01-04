@@ -6,7 +6,6 @@ import ccxt
 from botboy import BotBoy
 
 # TODO: Refactor
-# TODO: Change currencies to pub_client property
 
 
 class PhemexBoy:
@@ -110,53 +109,7 @@ class PhemexBoy:
 
     def currencies(self):
         """Retrieve all assets available from exchange"""
-        return [
-            "BTC",
-            "USDT",
-            "ETH",
-            "XRP",
-            "LINK",
-            "XTZ",
-            "LTC",
-            "ADA",
-            "TRX",
-            "ONT",
-            "BCH",
-            "NEO",
-            "EOS",
-            "COMP",
-            "LEND",
-            "YFI",
-            "DOT",
-            "UNI",
-            "AAVE",
-            "DOGE",
-            "BAT",
-            "CHZ",
-            "MANA",
-            "ENJ",
-            "SUSHI",
-            "SNX",
-            "GRT",
-            "MKR",
-            "ALGO",
-            "VET",
-            "ZEC",
-            "FIL",
-            "KSM",
-            "XMR",
-            "QTUM",
-            "XLM",
-            "ATOM",
-            "LUNA",
-            "SOL",
-            "AXS",
-            "MATIC",
-            "SHIB",
-            "FTM",
-            "DYDX",
-            "VPAD",
-        ]
+        return list(self.pub_client.currencies.keys())
 
     # ------------------------------- SPOT Methods ------------------------------- #
 
