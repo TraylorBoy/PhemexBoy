@@ -4,8 +4,8 @@ from phemexboy.interfaces.order_interface import OrderClientInterface
 
 
 class OrderClient(OrderClientInterface):
-    def __init__(self, order, client):
-        self._update(order)
+    def __init__(self, order_data, client):
+        self._update(order_data)
         self._client = client
 
     def __str__(self):
@@ -14,13 +14,13 @@ class OrderClient(OrderClientInterface):
             out += f"{key}: {self._order[key]}\n"
         return out
 
-    def _update(self, order):
+    def _update(self, order_data):
         """Updates order data"""
         # Extract proper symbol
-        symbol = order["info"]["symbol"]
-        del order["info"]
+        symbol = order_data["info"]["symbol"]
+        del order_data["info"]
 
-        self._order = order
+        self._order = order_data
         self._order["symbol"] = symbol
 
     def query(self, request):

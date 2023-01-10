@@ -9,6 +9,9 @@ from phemexboy.interfaces.spot_interface import SpotClientInterface
 from phemexboy.api.order import OrderClient
 from phemexboy.interfaces.order_interface import OrderClientInterface
 
+from phemexboy.api.future import FutureClient
+from phemexboy.interfaces.future_interface import FutureClientInterface
+
 
 def test_public():
     pub_client = PublicClient()
@@ -126,11 +129,23 @@ def test_spot_and_order():
 
 
 def test_future_and_position():
-    pass
+    # Test init
+    client = FutureClient()
+    init_test = isinstance(client, FutureClientInterface)
+
+    # Test balance
+    bal = client.balance()
+    bal_test = bal >= 0
+
+    return init_test and bal_test
 
 
 def test_all():
-    test_codes = {"public": test_public, "spot": test_spot_and_order}
+    test_codes = {
+        "public": test_public,
+        "spot": test_spot_and_order,
+        "future": test_future_and_position,
+    }
     print(f"Test Codes: {list(test_codes.keys())}")
     tests = input("Enter test code(s) separated by commas (ex. public, spot, etc...): ")
     tests = tests.split(",")

@@ -9,6 +9,7 @@ __version__ = "2.0.0"
 # TODO: Add logging
 # TODO: Add change_account
 # TODO: If possible retrieve current trading fees
+# TODO: Move _worker and BotBoy to helpers
 
 
 class PhemexClient:
