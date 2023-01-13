@@ -1,6 +1,6 @@
 """Implements PositionClientInterface"""
 
-from phemexboy.interfaces.position_interface import PositionClientInterface
+from phemexboy.interfaces.auth.position_interface import PositionClientInterface
 
 
 class PositionClient(PositionClientInterface):

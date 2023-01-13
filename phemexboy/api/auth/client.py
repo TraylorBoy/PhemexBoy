@@ -4,7 +4,8 @@ import os
 import ccxt
 
 from botboy import BotBoy
-from phemexboy.interfaces.auth_interface import AuthClientInterface
+from phemexboy.interfaces.auth.client_interface import AuthClientInterface
+from phemexboy.api.auth.order import OrderClient
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -57,7 +58,7 @@ class AuthClient(AuthClientInterface):
             code (str): Market code (ex. 'spot')
 
         Raises:
-          Exception: Invalid Code
+            Exception: Invalid Code
 
         Returns:
             Float: Balance for account
@@ -78,33 +79,18 @@ class AuthClient(AuthClientInterface):
             code (str): Market code (ex. 'spot')
 
         Raises:
-            NotImplementedError: Must implement when subclassing
+            Exception: Invalid Code
+
+        Returns:
+            List: All open orders for symbol
         """
-        raise NotImplementedError
-
-    def order(self, id: str, symbol: str, code: str):
-        """Create an OrderClient representing the open order with id
-
-        Args:
-            id (str): Order ID
-            symbol(str): Created symbol for base and quote currencies
-            code (str): Market code (ex. 'spot')
-
-        Raises:
-            NotImplementedError: Must implement when subclassing
-        """
-        raise NotImplementedError
-
-    def position(self, symbol: str):
-        """Create a PositionClient representing the open order with id
-
-        Args:
-            symbol(str): Created symbol for base and quote currencies
-
-        Raises:
-            NotImplementedError: Must implement when subclassing
-        """
-        raise NotImplementedError
+        if code == "spot":
+            return self._worker(self._endpoint.fetch_open_orders, symbol)
+        elif code == "future":
+            params = {"type": "swap", "code": "USD"}
+            return self._worker(self._endpoint.fetch_open_orders, symbol, params)
+        else:
+            raise Exception("Invalid code")
 
     def buy(self, symbol: str, type: str, amount: float, price: float = None):
         """Places a buy order
@@ -115,16 +101,14 @@ class AuthClient(AuthClientInterface):
             amount (float): Amount of base currency you would like to buy
             price (float, optional): Set limit order price. Defaults to None.
 
-        Raises:
-            NotImplementedError: Must implement the method when subclassing
+        Returns:
+            OrderClient: Object that represents open order and allows for interaction
         """
         params = {"timeInForce": "PostOnly"}
-        try:
-            return self._worker(
-                self._endpoint.create_order, symbol, type, "buy", amount, price, params
-            )
-        except Exception as e:
-            raise Exception(e)
+        data = self._worker(
+            self._endpoint.create_order, symbol, type, "buy", amount, price, params
+        )
+        return OrderClient(data, self)
 
     def sell(self, symbol: str, type: str, amount: float, price: float = None):
         """Places a sell order
@@ -145,6 +129,17 @@ class AuthClient(AuthClientInterface):
             )
         except Exception as e:
             raise Exception(e)
+
+    def position(self, symbol: str):
+        """Create a PositionClient representing the open position for symbol
+
+        Args:
+            symbol(str): Created symbol for base and quote currencies
+
+        Raises:
+            NotImplementedError: Must implement when subclassing
+        """
+        raise NotImplementedError
 
     def long(
         self,

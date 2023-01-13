@@ -1,6 +1,6 @@
 """Implements OrderClientInterface"""
 
-from phemexboy.interfaces.order_interface import OrderClientInterface
+from phemexboy.interfaces.auth.order_interface import OrderClientInterface
 
 
 class OrderClient(OrderClientInterface):
@@ -47,49 +47,42 @@ class OrderClient(OrderClientInterface):
             price (float): Edit limit order price
 
         Raises:
-            Exception: Order type must be limit
-            Exception: Failed to edit order
+            Exception: Order type error
         """
         symbol = self.query("symbol")
         type = self.query("type")
         side = self.query("side")
 
         if type == "market":
-            raise Exception("Order type must be limit")
+            raise Exception("Order type error")
 
-        try:
-            # Reopen order
-            self.cancel()
+        # Reopen order
+        self.cancel()
 
-            order_data = None
-            if side == "buy":
-                order_data = self._client._worker(
-                    self._client.buy, symbol, type, amount, price
-                )
-            if side == "sell":
-                order_data = self._client._worker(
-                    self._client.sell, symbol, type, amount, price
-                )
+        order_data = None
+        if side == "buy":
+            order_data = self._client._worker(
+                self._client.buy, symbol, type, amount, price
+            )
+        if side == "sell":
+            order_data = self._client._worker(
+                self._client.sell, symbol, type, amount, price
+            )
 
-            self._update(order_data)
-        except Exception as e:
-            raise Exception(e)
+        self._update(order_data)
 
     def cancel(self):
         """Cancel pending order
 
-        Raises:
-            Exception: Failed to cancel order
-
         Returns:
           Bool: Order cancellation was successful
         """
-        try:
-            id = self.query("id")
-            symbol = self.query("symbol")
-            order_data = self._client._worker(
-                self._client._endpoint.cancel_order, id, symbol
-            )
-            return True
-        except Exception as e:
-            raise Exception(e)
+
+        id = self.query("id")
+        symbol = self.query("symbol")
+
+        order_data = self._client._worker(
+            self._client._endpoint.cancel_order, id, symbol
+        )
+        self._update(order_data)
+        return True

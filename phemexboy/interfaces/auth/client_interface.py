@@ -44,22 +44,8 @@ class AuthClientInterface(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def order(self, id: str, symbol: str, code: str):
-        """Create an OrderClient representing the open order with id
-
-        Args:
-            id (str): Order ID
-            symbol(str): Created symbol for base and quote currencies
-            code (str): Market code (ex. 'spot')
-
-        Raises:
-            NotImplementedError: Must implement when subclassing
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def position(self, symbol: str):
-        """Create a PositionClient representing the open order with id
+        """Create a PositionClient representing the open position for symbol
 
         Args:
             symbol(str): Created symbol for base and quote currencies
