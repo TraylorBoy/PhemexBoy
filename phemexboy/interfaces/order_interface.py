@@ -4,7 +4,7 @@ import abc
 
 
 class OrderClientInterface(abc.ABC):
-    @abc.abstractclassmethod
+    @abc.abstractmethod
     def __str__(self):
         """Outputs order data
 
@@ -13,7 +13,7 @@ class OrderClientInterface(abc.ABC):
         """
         raise NotImplementedError
 
-    @abc.abstractclassmethod
+    @abc.abstractmethod
     def query(self, request: str):
         """Retrieve order information data
 
@@ -25,7 +25,7 @@ class OrderClientInterface(abc.ABC):
         """
         raise NotImplementedError
 
-    @abc.abstractclassmethod
+    @abc.abstractmethod
     def edit(self, amount: float, price: float):
         """Edit pending order
 
@@ -38,7 +38,7 @@ class OrderClientInterface(abc.ABC):
         """
         raise NotImplementedError
 
-    @abc.abstractclassmethod
+    @abc.abstractmethod
     def cancel(self):
         """Cancel pending order
 

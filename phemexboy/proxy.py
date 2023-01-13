@@ -10,6 +10,7 @@ __version__ = "2.0.0"
 # TODO: Add change_account
 # TODO: If possible retrieve current trading fees
 # TODO: Move _worker and BotBoy to helpers
+# TODO: Add orders to auth
 
 
 class PhemexClient:
@@ -17,22 +18,6 @@ class PhemexClient:
         pass
 
     # ------------------------------- FUTURE Methods ------------------------------- #
-
-    def future_balance(self, of):
-        """Retrieve FUTURE account balance for specified asset
-
-        of (String) - Asset to retrieve balance for (ex. BTC)
-        """
-        params = {"type": "swap", "code": "USD"}
-        return self._bot(self._client.fetch_balance, params)[of]["free"]
-
-    def leverage(self, amount, symbol):
-        """Set leverage
-
-        amount (Integer) - Leverage to set to
-        symbol (String) - Symbol to set the leverage for
-        """
-        return self._bot(self._client.set_leverage, amount, symbol)
 
     def long(self, symbol, type, amount, price=None, sl=None, tp=None):
         """Open a long position

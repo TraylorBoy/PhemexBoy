@@ -8,13 +8,10 @@ from botboy import BotBoy
 
 class PublicClient(PublicClientInterface):
     def __init__(self):
-        try:
-            self._endpoint = ccxt.phemex()
-            self._bot = BotBoy(name="PubBot")
-        except Exception as e:
-            raise Exception(e)
+        self._endpoint = ccxt.phemex()
+        self._bot = BotBoy(name="PubBot")
 
-    def _worker(self, task, *args, wait=True):
+    def _worker(self, task: object, *args: tuple, wait: bool = True):
         """Runs tasks on separate thread
 
         Args:
@@ -22,22 +19,17 @@ class PublicClient(PublicClientInterface):
             *args (list): Parameters for task
             wait (bool, optional): Wait for execution to finish. Defaults to True.
 
-        Raises:
-            Exception: Worker failed to execute task
-
         Returns:
             Any: Result from task execution
         """
-        try:
-            self._endpoint.load_markets(reload=True)
-            self._bot.task = task
-            if len(args) > 0:
-                self._bot.execute(*args, wait=wait)
-            else:
-                self._bot.execute(wait=wait)
-            return self._bot.result
-        except Exception as e:
-            raise Exception(e)
+
+        self._endpoint.load_markets(reload=True)
+        self._bot.task = task
+        if len(args) > 0:
+            self._bot.execute(*args, wait=wait)
+        else:
+            self._bot.execute(wait=wait)
+        return self._bot.result
 
     def timeframes(self):
         """Retrieve all timeframes available for exchange
@@ -55,16 +47,16 @@ class PublicClient(PublicClientInterface):
         """
         return ["future", "spot"]
 
-    def symbol(self, base, quote, code):
+    def symbol(self, base: str, quote: str, code: str):
         """Creates a symbol representing the asset pairing
 
         Args:
             base (str): Currency you are buying (ex. 'btc')
             quote (str): Currency you are selling (ex. 'usd')
-            code (str): The market you want to make a symbol for (ex. 'spot')
+            code (str): Market code (ex. 'spot')
 
         Raises:
-            Exception: Market is not available for exchange
+            Exception: InvalidCode
 
         Returns:
             String: Formatted base and quote currency symbol
@@ -83,46 +75,62 @@ class PublicClient(PublicClientInterface):
         if code == "future":
             return base_curr + "/" + quote_curr + ":" + quote_curr
 
-    def price(self, symbol):
+    def price(self, symbol: str):
         """Retrieve price of asset pair
 
         Args:
             symbol (str): Created symbol for base and quote currencies
 
-        Raises:
-            Exception: Failed to retrieve price
-
         Returns:
             Float: Current ask price for base currency
         """
-        try:
-            return self._worker(self._endpoint.fetch_order_book, symbol)["asks"][0][0]
-        except Exception as e:
-            raise Exception(e)
+        return self._worker(self._endpoint.fetch_order_book, symbol)["asks"][0][0]
 
-    def ohlcv(self, symbol, tf, since, limit=1000):
+    def ohlcv(self, symbol: str, tf: str, since: str = None):
         """Retrieve the open - high - low - close - volume data from exchange
 
         Args:
             symbol (str): Created symbol for base and quote currencies
             tf (str): Timeframe to retrieve OHLCV data for
-            since (str): Optional start date for retrieving OHLCV data, YEAR-MONTH-DAY (ex. 2018-12-01)
-            limit (int): How many sets of OHLCV data (candles) to retrieve
-
-        Raises:
-            Exception: Failed to retrieve OHLCV data
+            since (str): Optional start date for retrieving OHLCV data, YEAR-MONTH-DAY (ex. 2018-12-01), Default is None.
 
         Returns:
             List: Candle data for timeframe
         """
-        try:
-            formatted_date = None
-            if since:
-                formatted_date = since + "T00:00:00Z"
-                formatted_date = self._endpoint.parse8601(formatted_date)
+        # Get as much data as possible
+        limit = 1000000
+        formatted_date = None
+        if since:
+            formatted_date = since + "T00:00:00Z"
+            formatted_date = self._endpoint.parse8601(formatted_date)
 
-            return self._worker(
-                self._endpoint.fetch_ohlcv, symbol, tf, formatted_date, limit
-            )
-        except Exception as e:
-            raise Exception(e)
+        return self._worker(
+            self._endpoint.fetch_ohlcv, symbol, tf, formatted_date, limit
+        )
+
+    def currencies(self):
+        """Retrieve all currencies the exchange offers
+
+        Returns:
+            Dictionary: All exchange currencies
+        """
+        return self._worker(self._endpoint.fetch_currencies)
+
+    def status(self):
+        """Retrieve the current network status of exchange
+
+        Returns:
+            Dictionary: Current exchange status
+        """
+        return self._worker(self._endpoint.fetch_status)
+
+    def orderbook(self, symbol: str):
+        """Retrieve orderbook for symbol
+
+        Args:
+            symbol (str): Created symbol for base and quote currencies
+
+        Returns:
+            Dictionary: Current orderbook for symbol
+        """
+        return self._worker(self._endpoint.fetch_order_book, symbol)
