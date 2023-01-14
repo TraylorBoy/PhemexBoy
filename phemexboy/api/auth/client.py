@@ -14,7 +14,11 @@ load_dotenv()
 class AuthClient(AuthClientInterface):
     def __init__(self):
         self._endpoint = ccxt.phemex(
-            {"apiKey": os.getenv("KEY"), "secret": os.getenv("SECRET")}
+            {
+                "apiKey": os.getenv("KEY"),
+                "secret": os.getenv("SECRET"),
+                "enableRateLimit": True,
+            }
         )
         self._bot = BotBoy(name="AuthBot")
 
@@ -50,6 +54,29 @@ class AuthClient(AuthClientInterface):
         """
         return self._worker(self._endpoint.set_leverage, amount, symbol)["data"] == "OK"
 
+    def orders(self, symbol: str):
+        """Retrieve all open orders for symbol
+
+        Args:
+            symbol (str): Created symbol for base and quote currencies
+
+        Returns:
+            List: All open orders
+        """
+        return self._worker(self._endpoint.fetch_open_orders, symbol)
+
+    def cancel(self, id: str, symbol: str):
+        """Cancel open order
+
+        Args:
+            id (str): Order id
+            symbol (str): Created symbol for base and quote currencies
+
+        Returns:
+            Dictionary: Order data
+        """
+        return self._worker(self._endpoint.cancel_order, id, symbol)
+
     def balance(self, currency: str, code: str):
         """Retrieve the balance of an asset on exchange
 
@@ -58,7 +85,7 @@ class AuthClient(AuthClientInterface):
             code (str): Market code (ex. 'spot')
 
         Raises:
-            Exception: Invalid Code
+            Exception: InvalidCode
 
         Returns:
             Float: Balance for account
@@ -68,27 +95,6 @@ class AuthClient(AuthClientInterface):
         elif code == "future":
             params = {"type": "swap", "code": "USD"}
             return self._worker(self._endpoint.fetch_balance, params)[currency]["free"]
-        else:
-            raise Exception("Invalid code")
-
-    def orders(self, symbol: str, code: str):
-        """Retrieve all open orders for the given symbol
-
-        Args:
-            symbol(str): Created symbol for base and quote currencies
-            code (str): Market code (ex. 'spot')
-
-        Raises:
-            Exception: Invalid Code
-
-        Returns:
-            List: All open orders for symbol
-        """
-        if code == "spot":
-            return self._worker(self._endpoint.fetch_open_orders, symbol)
-        elif code == "future":
-            params = {"type": "swap", "code": "USD"}
-            return self._worker(self._endpoint.fetch_open_orders, symbol, params)
         else:
             raise Exception("Invalid code")
 
@@ -119,16 +125,14 @@ class AuthClient(AuthClientInterface):
             amount (float): Amount of base currency you would like to buy
             price (float, optional): Set limit order price. Defaults to None.
 
-        Raises:
-            NotImplementedError: Must implement the method when subclassing
+        Returns:
+            OrderClient: Object that represents open order and allows for interaction
         """
         params = {"timeInForce": "PostOnly"}
-        try:
-            return self._worker(
-                self._endpoint.create_order, symbol, type, "sell", amount, price, params
-            )
-        except Exception as e:
-            raise Exception(e)
+        data = self._worker(
+            self._endpoint.create_order, symbol, type, "sell", amount, price, params
+        )
+        return OrderClient(data, self)
 
     def position(self, symbol: str):
         """Create a PositionClient representing the open position for symbol
@@ -173,7 +177,7 @@ class AuthClient(AuthClientInterface):
             "timeInForce": "PostOnly",
         }
         try:
-            return self._worker(
+            data = self._worker(
                 self._endpoint.create_order, symbol, type, "buy", amount, price, params
             )
         except Exception as e:
@@ -211,7 +215,7 @@ class AuthClient(AuthClientInterface):
             "timeInForce": "PostOnly",
         }
         try:
-            return self._worker(
+            data = self._worker(
                 self._endpoint.create_order, symbol, type, "sell", amount, price, params
             )
         except Exception as e:

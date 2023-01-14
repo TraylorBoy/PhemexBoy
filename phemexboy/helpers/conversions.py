@@ -1,7 +1,7 @@
 """Asset conversions"""
 
 
-def usdt_to_crypto(usdt_balance, price, percent):
+def usdt_to_crypto(usdt_balance: float, price: float, percent: int):
     """Converts USDT quote currency to base currency based on percentage
 
     Args:

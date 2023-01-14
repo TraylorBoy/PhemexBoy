@@ -8,7 +8,7 @@ from botboy import BotBoy
 
 class PublicClient(PublicClientInterface):
     def __init__(self):
-        self._endpoint = ccxt.phemex()
+        self._endpoint = ccxt.phemex({"enableRateLimit": True})
         self._bot = BotBoy(name="PubBot")
 
     def _worker(self, task: object, *args: tuple, wait: bool = True):

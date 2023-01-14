@@ -31,19 +31,6 @@ class AuthClientInterface(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def orders(self, symbol: str, code: str):
-        """Retrieve all open orders for the given symbol
-
-        Args:
-            symbol(str): Created symbol for base and quote currencies
-            code (str): Market code (ex. 'spot')
-
-        Raises:
-            NotImplementedError: Must implement when subclassing
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def position(self, symbol: str):
         """Create a PositionClient representing the open position for symbol
 
@@ -132,5 +119,30 @@ class AuthClientInterface(abc.ABC):
 
         Raises:
             NotImplementedError: Must implement the method when subclassing
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def orders(self, symbol: str):
+        """Retrieve all open orders for symbol
+
+        Args:
+            symbol (str): Created symbol for base and quote currencies
+
+        Raises:
+            NotImplementedError: Must implement before subclassing
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def cancel(self, id: str, symbol: str):
+        """Cancel open order
+
+        Args:
+            id (str): Order id
+            symbol (str): Created symbol for base and quote currencies
+
+        Raises:
+            NotImplementedError: Must implement before subclassing
         """
         raise NotImplementedError
