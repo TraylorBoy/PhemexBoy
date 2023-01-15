@@ -43,7 +43,14 @@ class AuthClientInterface(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def buy(self, symbol: str, type: str, amount: float, price: float = None):
+    def buy(
+        self,
+        symbol: str,
+        type: str,
+        amount: float,
+        price: float = None,
+        config: dict = {},
+    ):
         """Places a buy order
 
         Args:
@@ -51,6 +58,7 @@ class AuthClientInterface(abc.ABC):
             type (str): Type of order (only supports 'market' and 'limit')
             amount (float): Amount of base currency you would like to buy
             price (float, optional): Set limit order price. Defaults to None.
+            config (dict, optional): Optional parameters to send to exchange. Defaults to None.
 
         Raises:
             NotImplementedError: Must implement the method when subclassing
@@ -58,7 +66,14 @@ class AuthClientInterface(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def sell(self, symbol: str, type: str, amount: float, price: float = None):
+    def sell(
+        self,
+        symbol: str,
+        type: str,
+        amount: float,
+        price: float = None,
+        config: dict = {},
+    ):
         """Places a sell order
 
         Args:
@@ -66,6 +81,7 @@ class AuthClientInterface(abc.ABC):
             type (str): Type of order (only supports 'market' and 'limit')
             amount (float): Amount of base currency you would like to buy
             price (float, optional): Set limit order price. Defaults to None.
+            config (dict, optional): Optional parameters to send to exchange. Defaults to None.
 
         Raises:
             NotImplementedError: Must implement the method when subclassing
@@ -81,6 +97,7 @@ class AuthClientInterface(abc.ABC):
         price: float = None,
         sl: float = None,
         tp: float = None,
+        config: dict = {},
     ):
         """Open a long position
 
@@ -91,6 +108,7 @@ class AuthClientInterface(abc.ABC):
             price (float, optional): Set limit order price. Defaults to None.
             sl (float, optional): Set stop loss price. Defaults to None.
             tp (float, optional): Set take profit price. Defaults to None.
+            config (dict, optional): Optional parameters to send to exchange. Defaults to None.
 
         Raises:
             NotImplementedError: Must implement the method when subclassing
@@ -106,6 +124,7 @@ class AuthClientInterface(abc.ABC):
         price: float = None,
         sl: float = None,
         tp: float = None,
+        config: dict = {},
     ):
         """Open a short position
 
@@ -116,6 +135,7 @@ class AuthClientInterface(abc.ABC):
             price (float, optional): Set limit order price. Defaults to None.
             sl (float, optional): Set stop loss price. Defaults to None.
             tp (float, optional): Set take profit price. Defaults to None.
+            config (dict, optional): Optional parameters to send to exchange. Defaults to None.
 
         Raises:
             NotImplementedError: Must implement the method when subclassing

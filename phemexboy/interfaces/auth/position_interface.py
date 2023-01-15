@@ -31,8 +31,18 @@ class PositionClientInterface(abc.ABC):
 
         Args:
             amount (int): How many contracts to close
+            all (bool): Close all contracts. Defaults to False.
 
         Raises:
             NotImplementedError: Must implement the method when subclassing
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def closed(self):
+        """Retrieves closed state
+
+        Raises:
+            NotImplementedError: Must implement before subclassing
         """
         raise NotImplementedError

@@ -4,8 +4,7 @@ import unittest
 
 from phemexboy.api.public import PublicClient
 from phemexboy.api.auth.client import AuthClient
-from phemexboy.interfaces.auth.order_interface import OrderClientInterface
-from phemexboy.helpers.conversions import usdt_to_crypto
+from phemexboy.interfaces.auth.position_interface import PositionClientInterface
 
 
 class TestPositionClient(unittest.TestCase):
@@ -15,68 +14,68 @@ class TestPositionClient(unittest.TestCase):
     def test_position(self):
         auth_client = self.AUTH_CLIENT
         pub_client = self.PUB_CLIENT
-        symbol = pub_client.symbol(base="BTC", quote="USD", code="spot")
+        symbol = pub_client.symbol(base="BTC", quote="USD", code="future")
+        amount = 1
 
-        # Limit Buy
+        # Set leverage
+        auth_client.leverage(amount=5, symbol=symbol)
+
+        # Limit long
         type = "limit"
-        price = 1000
-        usdt_bal = auth_client.balance(currency="USDT", code="spot")
-        amount = usdt_to_crypto(usdt_balance=usdt_bal, price=price, percent=90)
+        price = 9000
 
-        order = auth_client.buy(symbol=symbol, type=type, amount=amount, price=price)
-        self.assertIsInstance(order, OrderClientInterface)
+        order = auth_client.long(symbol=symbol, type=type, amount=amount, price=price)
         self.assertEqual(order.pending(), True)
-        print(f"Testing __str__: \n{order}")
-
-        price = 1001
-        amount = usdt_to_crypto(usdt_balance=usdt_bal, price=price, percent=90)
-        order.edit(amount=amount, price=price)
-        self.assertEqual(order.query(request="price"), price)
 
         order.cancel()
         self.assertEqual(order.canceled(), True)
 
-        # Market Buy
-        type = "market"
-        amount = usdt_to_crypto(
-            usdt_balance=usdt_bal, price=pub_client.price(symbol), percent=90
-        )
-        order = auth_client.buy(symbol=symbol, type=type, amount=amount)
-        self.assertEqual(order.closed(), True)
-        self.assertEqual(order.pending(), False)
-
-        # Limit Sell
+        # Limit short
         type = "limit"
         price = 100000
-        amount = auth_client.balance(currency="BTC", code="spot")
-        order = auth_client.sell(symbol=symbol, type=type, amount=amount, price=price)
-        self.assertEqual(order.pending(), True)
 
-        price = 90000
-        order.edit(amount=amount, price=price)
-        self.assertEqual(order.query(request="price"), price)
+        order = auth_client.short(symbol=symbol, type=type, amount=amount, price=price)
+        self.assertEqual(order.pending(), True)
 
         order.cancel()
         self.assertEqual(order.canceled(), True)
 
-        # Market Sell
+        # Market long
         type = "market"
-        amount = auth_client.balance(currency="BTC", code="spot")
-        order = auth_client.sell(symbol=symbol, type=type, amount=amount)
+        order = auth_client.long(symbol=symbol, type=type, amount=amount, price=price)
         self.assertEqual(order.closed(), True)
-        self.assertEqual(order.pending(), False)
+
+        position = auth_client.position(symbol=symbol)
+
+        # Test __str__
+        print(position)
+
+        all_contracts = position.query("contracts")
+        position.close(all_contracts)
+        self.assertEqual(position.closed(), True)
+
+        # Market short
+        # Tests order close amount
+        type = "market"
+        order = auth_client.long(symbol=symbol, type=type, amount=2, price=price)
+        self.assertEqual(order.closed(), True)
+
+        position = auth_client.position(symbol=symbol)
+        position.close(1)
+        self.assertEqual(position.closed(), False)
+        position.close(1)
+        self.assertEqual(position.closed(), True)
 
     def test_swap(self):
         auth_client = self.AUTH_CLIENT
         pub_client = self.PUB_CLIENT
-        symbol = pub_client.symbol(base="BTC", quote="USD", code="spot")
+        symbol = pub_client.symbol(base="ETH", quote="USD", code="future")
+        amount = 1
 
         # Limit Buy
         type = "limit"
-        price = pub_client.price(symbol=symbol)
-        usdt_bal = auth_client.balance(currency="USDT", code="spot")
-        amount = usdt_to_crypto(usdt_balance=usdt_bal, price=price, percent=90)
-        order = auth_client.buy(symbol=symbol, type=type, amount=amount, price=price)
+        price = pub_client.price(symbol=symbol) - 0.01
+        order = auth_client.long(symbol=symbol, type=type, amount=amount, price=price)
 
         # Make sure order was placed and closed
         print("Pending")
@@ -86,12 +85,8 @@ class TestPositionClient(unittest.TestCase):
                 self.assertEqual(order.pending(), True)
 
         print("Closing")
-        if order.close(retry=True, wait=20, tries=5):
+        if order.close(retry=True, wait=2, tries=10):
             print("Closed")
             self.assertEqual(order.closed(), True)
-
-            # Market Sell
-            print("Selling")
-            type = "market"
-            amount = auth_client.balance(currency="BTC", code="spot")
-            auth_client.sell(symbol=symbol, type=type, amount=amount)
+            position = auth_client.position(symbol)
+            position.close(all=True)

@@ -6,6 +6,7 @@ import ccxt
 from botboy import BotBoy
 from phemexboy.interfaces.auth.client_interface import AuthClientInterface
 from phemexboy.api.auth.order import OrderClient
+from phemexboy.api.auth.position import PositionClient
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -98,7 +99,14 @@ class AuthClient(AuthClientInterface):
         else:
             raise Exception("Invalid code")
 
-    def buy(self, symbol: str, type: str, amount: float, price: float = None):
+    def buy(
+        self,
+        symbol: str,
+        type: str,
+        amount: float,
+        price: float = None,
+        config: dict = {},
+    ):
         """Places a buy order
 
         Args:
@@ -106,17 +114,27 @@ class AuthClient(AuthClientInterface):
             type (str): Type of order (only supports 'market' and 'limit')
             amount (float): Amount of base currency you would like to buy
             price (float, optional): Set limit order price. Defaults to None.
+            config (dict, optional): Optional parameters to send to exchange. Defaults to None.
 
         Returns:
             OrderClient: Object that represents open order and allows for interaction
         """
         params = {"timeInForce": "PostOnly"}
+        params.update(config)
         data = self._worker(
             self._endpoint.create_order, symbol, type, "buy", amount, price, params
         )
+
         return OrderClient(data, self)
 
-    def sell(self, symbol: str, type: str, amount: float, price: float = None):
+    def sell(
+        self,
+        symbol: str,
+        type: str,
+        amount: float,
+        price: float = None,
+        config: dict = {},
+    ):
         """Places a sell order
 
         Args:
@@ -124,11 +142,13 @@ class AuthClient(AuthClientInterface):
             type (str): Type of order (only supports 'market' and 'limit')
             amount (float): Amount of base currency you would like to buy
             price (float, optional): Set limit order price. Defaults to None.
+            config (dict, optional): Optional parameters to send to exchange. Defaults to None.
 
         Returns:
             OrderClient: Object that represents open order and allows for interaction
         """
         params = {"timeInForce": "PostOnly"}
+        params.update(config)
         data = self._worker(
             self._endpoint.create_order, symbol, type, "sell", amount, price, params
         )
@@ -140,10 +160,11 @@ class AuthClient(AuthClientInterface):
         Args:
             symbol(str): Created symbol for base and quote currencies
 
-        Raises:
-            NotImplementedError: Must implement when subclassing
+        Returns:
+            PositionClient: Represents open position and allows for interaction
         """
-        raise NotImplementedError
+        data = self._worker(self._endpoint.fetch_positions, [symbol])
+        return PositionClient(data[0], self)
 
     def long(
         self,
@@ -153,6 +174,7 @@ class AuthClient(AuthClientInterface):
         price: float = None,
         sl: float = None,
         tp: float = None,
+        config: dict = {},
     ):
         """Open a long position
 
@@ -163,9 +185,10 @@ class AuthClient(AuthClientInterface):
             price (float, optional): Set limit order price. Defaults to None.
             sl (float, optional): Set stop loss price. Defaults to None.
             tp (float, optional): Set take profit price. Defaults to None.
+            config (dict, optional): Optional parameters to send to exchange. Defaults to None.
 
-        Raises:
-            NotImplementedError: Must implement the method when subclassing
+        Returns:
+            OrderClient: Object that represents open order and allows for interaction
         """
         params = {
             "type": "swap",
@@ -176,12 +199,8 @@ class AuthClient(AuthClientInterface):
             "tpTrigger": "ByLastPrice",
             "timeInForce": "PostOnly",
         }
-        try:
-            data = self._worker(
-                self._endpoint.create_order, symbol, type, "buy", amount, price, params
-            )
-        except Exception as e:
-            raise Exception(e)
+        params.update(config)
+        return self.buy(symbol, type, amount, price, params)
 
     def short(
         self,
@@ -191,6 +210,7 @@ class AuthClient(AuthClientInterface):
         price: float = None,
         sl: float = None,
         tp: float = None,
+        config: dict = {},
     ):
         """Open a short position
 
@@ -201,6 +221,7 @@ class AuthClient(AuthClientInterface):
             price (float, optional): Set limit order price. Defaults to None.
             sl (float, optional): Set stop loss price. Defaults to None.
             tp (float, optional): Set take profit price. Defaults to None.
+            config (dict, optional): Optional parameters to send to exchange. Defaults to None.
 
         Raises:
             NotImplementedError: Must implement the method when subclassing
@@ -214,9 +235,5 @@ class AuthClient(AuthClientInterface):
             "tpTrigger": "ByLastPrice",
             "timeInForce": "PostOnly",
         }
-        try:
-            data = self._worker(
-                self._endpoint.create_order, symbol, type, "sell", amount, price, params
-            )
-        except Exception as e:
-            raise Exception(e)
+        params.update(config)
+        return self.sell(symbol, type, amount, price, params)

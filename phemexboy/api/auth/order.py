@@ -1,5 +1,7 @@
 """Implements OrderClientInterface"""
 
+from ccxt.base.errors import InsufficientFunds
+
 from phemexboy.interfaces.auth.order_interface import OrderClientInterface
 from phemexboy.interfaces.auth.client_interface import AuthClientInterface
 from phemexboy.api.public import PublicClient
@@ -31,6 +33,7 @@ class OrderClient(OrderClientInterface):
             if "info" in order_data.keys():
                 # Extract proper symbol and remove status
                 # Status is managed by client state
+                # Info is original request, not needed
                 symbol = order_data["info"]["symbol"]
                 del order_data["info"]
                 del order_data["status"]
@@ -167,6 +170,7 @@ class OrderClient(OrderClientInterface):
 
         Raises:
             Exception: OrderTypeError
+            InsufficientFundsError: More than likely tried to place order that was already closed
 
         Returns:
             Bool: Order successfully placed
@@ -180,11 +184,19 @@ class OrderClient(OrderClientInterface):
         symbol = self.query("symbol")
         amount = self.query("amount")
 
-        while not self.pending() and self.closed():
-            self.edit(amount=amount, price=price) if price else self.edit(
-                amount=amount, price=self._pub_client.price(symbol=symbol)
+        try:
+            while not self.pending() and self.closed():
+                self.edit(amount=amount, price=price) if price else self.edit(
+                    amount=amount, price=self._pub_client.price(symbol=symbol) - 0.1
+                )
+                sleep(wait)
+        except InsufficientFunds:
+            print(
+                "InsufficientFundsError, more than likely tried to place order that was already closed"
             )
-            sleep(wait)
+            pass
+        finally:
+            self.closed()
 
         return True
 
@@ -215,5 +227,8 @@ class OrderClient(OrderClientInterface):
                 self.retry(price=price)
 
             i += 1
+
+        if not closed and self.pending():
+            self.cancel()
 
         return closed
