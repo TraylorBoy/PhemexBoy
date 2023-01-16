@@ -7,6 +7,7 @@ from botboy import BotBoy
 from phemexboy.interfaces.auth.client_interface import AuthClientInterface
 from phemexboy.api.auth.order import OrderClient
 from phemexboy.api.auth.position import PositionClient
+from phemexboy.exceptions import InvalidCodeError
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -31,17 +32,22 @@ class AuthClient(AuthClientInterface):
             *args (list): Parameters for task
             wait (bool, optional): Wait for execution to finish. Defaults to True.
 
+        Raises:
+            Exception: Any
+
         Returns:
             Any: Result from task execution
         """
-
-        self._endpoint.load_markets(reload=True)
-        self._bot.task = task
-        if len(args) > 0:
-            self._bot.execute(*args, wait=wait)
-        else:
-            self._bot.execute(wait=wait)
-        return self._bot.result
+        try:
+            self._endpoint.load_markets(reload=True)
+            self._bot.task = task
+            if len(args) > 0:
+                self._bot.execute(*args, wait=wait)
+            else:
+                self._bot.execute(wait=wait)
+            return self._bot.result
+        except Exception:
+            raise
 
     def leverage(self, amount: int, symbol: str):
         """Set future account leverage
@@ -86,7 +92,7 @@ class AuthClient(AuthClientInterface):
             code (str): Market code (ex. 'spot')
 
         Raises:
-            Exception: InvalidCode
+            InvalidCodeError: Codes may be found by calling proxy.codes()
 
         Returns:
             Float: Balance for account
@@ -97,7 +103,7 @@ class AuthClient(AuthClientInterface):
             params = {"type": "swap", "code": "USD"}
             return self._worker(self._endpoint.fetch_balance, params)[currency]["free"]
         else:
-            raise Exception("Invalid code")
+            raise InvalidCodeError()
 
     def buy(
         self,

@@ -7,6 +7,9 @@ test-auth:
 test-proxy:
 	python3 -m unittest -f -v phemexboy/tests/proxy_tests.py
 
+test-proxy-auth:
+	python3 -m unittest -f -v phemexboy.tests.proxy_tests.TestProxy.test_auth
+
 test-trade:
 	python3 -m unittest -f -v phemexboy.tests.order_tests.TestOrderClient.test_trade
 

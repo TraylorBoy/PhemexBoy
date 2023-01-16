@@ -3,6 +3,7 @@
 import ccxt
 
 from phemexboy.interfaces.public_interface import PublicClientInterface
+from phemexboy.exceptions import InvalidCodeError
 from botboy import BotBoy
 
 
@@ -19,17 +20,22 @@ class PublicClient(PublicClientInterface):
             *args (list): Parameters for task
             wait (bool, optional): Wait for execution to finish. Defaults to True.
 
+        Raises:
+            Exception: Any
+
         Returns:
             Any: Result from task execution
         """
-
-        self._endpoint.load_markets(reload=True)
-        self._bot.task = task
-        if len(args) > 0:
-            self._bot.execute(*args, wait=wait)
-        else:
-            self._bot.execute(wait=wait)
-        return self._bot.result
+        try:
+            self._endpoint.load_markets(reload=True)
+            self._bot.task = task
+            if len(args) > 0:
+                self._bot.execute(*args, wait=wait)
+            else:
+                self._bot.execute(wait=wait)
+            return self._bot.result
+        except Exception:
+            raise
 
     def timeframes(self):
         """Retrieve all timeframes available for exchange
@@ -56,13 +62,13 @@ class PublicClient(PublicClientInterface):
             code (str): Market code (ex. 'spot')
 
         Raises:
-            Exception: InvalidCode
+            InvalidCode: Codes may be found by calling proxy.codes()
 
         Returns:
             String: Formatted base and quote currency symbol
         """
         if code not in self.codes():
-            raise Exception("Invalid code")
+            raise InvalidCodeError()
 
         base_curr = base.upper()
         quote_curr = quote.upper()

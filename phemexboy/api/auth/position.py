@@ -2,8 +2,10 @@
 
 from phemexboy.interfaces.auth.position_interface import PositionClientInterface
 from phemexboy.interfaces.auth.client_interface import AuthClientInterface
+from phemexboy.exceptions import InvalidRequestError
 
 from copy import deepcopy
+from ccxt import NetworkError, ExchangeError
 
 
 class PositionClient(PositionClientInterface):
@@ -35,12 +37,30 @@ class PositionClient(PositionClientInterface):
     def _check_closed(self):
         """Checks if position was fully closed
 
+        Raises:
+            NetworkError: AuthClient failed to retrieve position for {symbol}
+            ExchangeError: AuthClient failed to retrieve position for {symbol}
+            Exception: AuthClient failed to retrieve position for {symbol}
+
         Returns:
             Bool: All contracts in position was closed
         """
         # Get new position data
         symbol = self.query("symbol")
-        pos = self._client.position(symbol)
+        pos = None
+        try:
+            pos = self._client.position(symbol)
+        except NetworkError as e:
+            print(
+                f"NetworkError - AuthClient failed to retrieve position for {symbol}: {e}"
+            )
+        except ExchangeError as e:
+            print(
+                f"ExchangeError - AuthClient failed to retrieve position for {symbol}: {e}"
+            )
+        except Exception as e:
+            print(f"AuthClient failed to retrieve position for {symbol}: {e}")
+
         self._position = deepcopy(pos._position)
 
         # Check if position closed
@@ -53,16 +73,18 @@ class PositionClient(PositionClientInterface):
         """Retrieve position information data
 
         Args:
-          request (str): Type of data you want to retrieve from PositionClient
+            request (str): Type of data you want to retrieve from PositionClient
 
         Raises:
-            Exception: Invalid request
+            InvalidRequestError: Please print this object in order to see the correct request params
 
         Returns:
             String: Requested order data
         """
         if request not in list(self._position.keys()):
-            raise Exception("Invalid request")
+            raise InvalidRequestError(
+                "Please print this object in order to see the correct request params"
+            )
         return self._position[request]
 
     def close(self, amount: int = 1, all: bool = False):
@@ -71,6 +93,9 @@ class PositionClient(PositionClientInterface):
         Args:
             amount (int): How many contracts to close. Defaults to 1.
             all (bool): Close all contracts. Defaults to False.
+
+        Raises:
+            Exception: AuthClient failed to open position
         """
         side = self.query("side")
         symbol = self.query("symbol")
@@ -79,10 +104,13 @@ class PositionClient(PositionClientInterface):
         if all:
             amount = self.query("contracts")
 
-        if side == "long":
-            self._client.short(symbol, type, amount)
-        if side == "short":
-            self._client.long(symbol, type, amount)
+        try:
+            if side == "long":
+                self._client.short(symbol, type, amount)
+            if side == "short":
+                self._client.long(symbol, type, amount)
+        except Exception as e:
+            print(f"AuthClient failed to open position: {e}")
 
         if self._check_closed():
             self._update(state="closed")

@@ -5,9 +5,11 @@ from ccxt.base.errors import InsufficientFunds
 from phemexboy.interfaces.auth.order_interface import OrderClientInterface
 from phemexboy.interfaces.auth.client_interface import AuthClientInterface
 from phemexboy.api.public import PublicClient
+from phemexboy.exceptions import OrderTypeError, CancellationError, InvalidRequestError
 
 from copy import deepcopy
 from time import sleep
+from ccxt import NetworkError, ExchangeError
 
 
 class OrderClient(OrderClientInterface):
@@ -51,13 +53,15 @@ class OrderClient(OrderClientInterface):
             request (str): Type of data you want to retrieve from OrderClient
 
         Raises:
-            Exception: InvalidRequestError
+            InvalidRequestError: Please print this object in order to see the correct request params
 
         Returns:
             String: Requested order data
         """
         if request not in list(self._order.keys()):
-            raise Exception("InvalidRequestError")
+            raise InvalidRequestError(
+                "Please print this object in order to see the correct request params"
+            )
         return self._order[request]
 
     def edit(self, amount: float, price: float):
@@ -68,15 +72,17 @@ class OrderClient(OrderClientInterface):
             price (float): Edit limit order price
 
         Raises:
-            Exception: OrderTypeError
-            Exception: EditError
+            OrderTypeError: Order type must be limit in order to edit
+            NetworkError: AuthClient failed to place order
+            ExchangeError: AuthClient failed to place order
+            Exception: AuthClient failed to place order
         """
         symbol = self.query("symbol")
         type = self.query("type")
         side = self.query("side")
 
         if type == "market":
-            raise Exception("OrderTypeError")
+            raise OrderTypeError("Order type must be limit in order to edit")
 
         # Reopen order
         if self.pending():
@@ -84,10 +90,17 @@ class OrderClient(OrderClientInterface):
 
         # Retrieve new order data from OrderClient
         client = None
-        if side == "buy":
-            client = self._client.buy(symbol, type, amount, price)
-        if side == "sell":
-            client = self._client.sell(symbol, type, amount, price)
+        try:
+            if side == "buy":
+                client = self._client.buy(symbol, type, amount, price)
+            if side == "sell":
+                client = self._client.sell(symbol, type, amount, price)
+        except NetworkError as e:
+            print(f"NetworkError - AuthClient failed to place order: {e}")
+        except ExchangeError as e:
+            print(f"ExchangeError - AuthClient failed to place order: {e}")
+        except Exception as e:
+            print(f"AuthClient failed to place order: {e}")
 
         self._order = deepcopy(client._order)
 
@@ -95,22 +108,38 @@ class OrderClient(OrderClientInterface):
         """Cancel pending order
 
         Raises:
-            Exception: CancellationError
-            Exception: OrderTypeError
+            CancellationError: Typically this means order was not found
+            OrderTypeError: Order type must be limit in order to cancel
+            NetworkError: AuthClient failed to cancel order for {symbol} with id {id}
+            ExchangeError: AuthClient failed to cancel order for {symbol} with id {id}
+            Exception: AuthClient failed to cancel order for {symbol} with id {id}
         """
         type = self.query("type")
         if type == "market":
-            raise Exception("OrderTypeError")
+            raise OrderTypeError("Order type must be limit in order to cancel")
 
         id = self.query("id")
         symbol = self.query("symbol")
-        # Cancel order
-        data = self._client.cancel(id, symbol)
+        data = None
+        try:
+            # Cancel order
+            data = self._client.cancel(id, symbol)
+        except NetworkError as e:
+            print(
+                f"NetworkError - AuthClient failed to cancel order for {symbol} with id {id}: {e}"
+            )
+        except ExchangeError as e:
+            print(
+                f"ExchangeError - AuthClient failed to cancel order for {symbol} with id {id}: {e}"
+            )
+        except Exception as e:
+            print(f"AuthClient failed to cancel order for {symbol} with id {id}: {e}")
+
         # Update state
         if data:
             self._update(order_data=data, state="canceled")
         else:
-            raise Exception("CancellationError")
+            raise CancellationError("Typically this means order was not found")
 
     def canceled(self):
         """Check if order was canceled
@@ -123,13 +152,29 @@ class OrderClient(OrderClientInterface):
     def pending(self):
         """Check if order is still open
 
+        Raises:
+            NetworkError: AuthClient failed to retrieve orders for {symbol}
+            ExchangeError: AuthClient failed to retrieve orders for {symbol}
+            Exception: AuthClient failed to retrieve orders for {symbol}
+
         Returns:
             Bool: Order is still open
         """
         id = self.query("id")
         symbol = self.query("symbol")
 
-        data = self._client.orders(symbol)
+        try:
+            data = self._client.orders(symbol)
+        except NetworkError as e:
+            print(
+                f"NetworkError - AuthClient failed to retrieve orders for {symbol}: {e}"
+            )
+        except ExchangeError as e:
+            print(
+                f"ExchangeError - AuthClient failed to retrieve orders for {symbol}: {e}"
+            )
+        except Exception as e:
+            print(f"AuthClient failed to retrieve orders for {symbol}: {e}")
 
         if data:
             for order in data:
@@ -142,6 +187,11 @@ class OrderClient(OrderClientInterface):
     def closed(self):
         """Check if order was filled or cancelled
 
+        Raises:
+            NetworkError: AuthClient failed to retrieve orders for {symbol}
+            ExchangeError: AuthClient failed to retrieve orders for {symbol}
+            Exception: AuthClient failed to retrieve orders for {symbol}
+
         Returns:
             Bool: Order was successfully filled
         """
@@ -149,7 +199,19 @@ class OrderClient(OrderClientInterface):
         symbol = self.query("symbol")
 
         found = False
-        data = self._client.orders(symbol)
+        data = None
+        try:
+            data = self._client.orders(symbol)
+        except NetworkError as e:
+            print(
+                f"NetworkError - AuthClient failed to retrieve orders for {symbol}: {e}"
+            )
+        except ExchangeError as e:
+            print(
+                f"ExchangeError - AuthClient failed to retrieve orders for {symbol}: {e}"
+            )
+        except Exception as e:
+            print(f"AuthClient failed to retrieve orders for {symbol}: {e}")
 
         if data:
             for res in data:
@@ -169,14 +231,17 @@ class OrderClient(OrderClientInterface):
             price (float): Price to retry order at. Defaults to None.
 
         Raises:
-            Exception: OrderTypeError
+            OrderTypeError: Order type must be limit in order to retry
             InsufficientFundsError: More than likely tried to place order that was already closed
+            NetworkError: PublicClient failed to retrieve price
+            ExchangeError: PublicClient failed to retrieve price
+            Exception: PublicClient failed to retrieve price
 
         Returns:
             Bool: Order successfully placed
         """
         if type == "market":
-            raise Exception("OrderTypeError")
+            raise OrderTypeError("Order type must be limit in order to retry")
 
         if self.pending():
             self.cancel()
@@ -195,6 +260,16 @@ class OrderClient(OrderClientInterface):
                 "InsufficientFundsError, more than likely tried to place order that was already closed"
             )
             pass
+        except NetworkError as e:
+            print(
+                f"NetworkError - PublicClient failed to retrieve price for {symbol}: {e}"
+            )
+        except ExchangeError as e:
+            print(
+                f"ExchangeError - PublicClient failed to retrieve price for {symbol}: {e}"
+            )
+        except Exception as e:
+            print(f"PublicClient failed to retrieve price for {symbol}: {e}")
         finally:
             self.closed()
 
