@@ -17,13 +17,13 @@ test-order-and-position:
 	python3 -m unittest -f -v phemexboy.tests.proxy_tests.TestProxy.test_order_and_position
 
 test-spot-trade:
-	python3 -m unittest -f -v phemexboy.tests.order_tests.TestSpot.test_trade
+	python3 -m unittest -f -v phemexboy.tests.spot_tests.TestSpot.test_trade
 
 test-spot:
-	python3 -m unittest -f -v phemexboy.tests.order_tests.TestSpot.test_spot
+	python3 -m unittest -f -v phemexboy.tests.spot_tests.TestSpot.test_spot
 
 test-future:
-	python3 -m unittest -f -v phemexboy.tests.position_tests.TestFuture.test_future
+	python3 -m unittest -f -v phemexboy.tests.future_tests.TestFuture.test_future
 
 test-future-trade:
-	python3 -m unittest -f -v phemexboy.tests.position_tests.TestFuture.test_trade
+	python3 -m unittest -f -v phemexboy.tests.future_tests.TestFuture.test_trade

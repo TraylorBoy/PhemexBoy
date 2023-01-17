@@ -12,3 +12,7 @@ class CancellationError(Exception):
 
 class InvalidRequestError(Exception):
     pass
+
+
+class InvalidPositionError(Exception):
+    pass

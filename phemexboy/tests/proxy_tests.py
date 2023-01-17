@@ -10,7 +10,6 @@ from phemexboy.interfaces.public_interface import PublicClientInterface
 from phemexboy.exceptions import (
     InvalidCodeError,
     InvalidRequestError,
-    CancellationError,
     OrderTypeError,
 )
 
@@ -95,7 +94,7 @@ class TestProxy(unittest.TestCase):
         proxy = Proxy()
 
         # Test balance
-        spot_bal = proxy.balance(currency="USD", code="spot")
+        spot_bal = proxy.balance(currency="USDT", code="spot")
         fut_bal = proxy.balance(currency="USD", code="future")
         self.assertGreaterEqual(spot_bal, 0)
         self.assertGreaterEqual(fut_bal, 0)
@@ -104,7 +103,7 @@ class TestProxy(unittest.TestCase):
         self.assertEqual(proxy.leverage(10, proxy.symbol("BTC", "USD", "future")), True)
 
     def test_order_and_position(self):
-        proxy = Proxy()
+        proxy = Proxy(verbose=False)
         symbol = proxy.symbol(base="BTC", quote="USD", code="future")
 
         # Test init
@@ -112,6 +111,7 @@ class TestProxy(unittest.TestCase):
         amount = 1
         price = 9000
         order = proxy.long(symbol, type, amount, price)
+        order.verbose()
         self.assertIsInstance(order, OrderClientInterface)
         self.assertIsInstance(order._client, AuthClientInterface)
         self.assertIsInstance(order._pub_client, PublicClientInterface)
@@ -136,15 +136,11 @@ class TestProxy(unittest.TestCase):
         amount = 2
         order.edit(amount, price)
         self.assertEqual(order.query("price"), price)
-        self.assertEqual(order.query("contracts"), amount)
+        self.assertEqual(order.query("amount"), amount)
 
         # Test cancel
         order.cancel()
         self.assertEqual(order.canceled(), True)
-
-        # Test CancellationError
-        with self.assertRaises(CancellationError):
-            order.cancel()
 
         # Test OrderTypeError
         order._order["type"] = "market"
@@ -165,6 +161,7 @@ class TestProxy(unittest.TestCase):
         if order.close(retry=True, wait=10, tries=6):
             # Test init
             position = proxy.position(symbol)
+            position.verbose()
             self.assertIsInstance(position, PositionClientInterface)
             self.assertIsInstance(position._client, AuthClientInterface)
             self.assertIsInstance(position._position, dict)

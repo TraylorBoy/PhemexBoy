@@ -5,7 +5,7 @@ from ccxt.base.errors import InsufficientFunds
 from phemexboy.interfaces.auth.order_interface import OrderClientInterface
 from phemexboy.interfaces.auth.client_interface import AuthClientInterface
 from phemexboy.api.public import PublicClient
-from phemexboy.exceptions import OrderTypeError, CancellationError, InvalidRequestError
+from phemexboy.exceptions import OrderTypeError, InvalidRequestError
 
 from copy import deepcopy
 from time import sleep
@@ -143,7 +143,6 @@ class OrderClient(OrderClientInterface):
         """Cancel pending order
 
         Raises:
-            CancellationError: Typically this means order was not found
             OrderTypeError: Order type must be limit in order to cancel
             NetworkError: AuthClient failed to cancel order for {symbol} with id {id}
             ExchangeError: AuthClient failed to cancel order for {symbol} with id {id}
@@ -176,8 +175,6 @@ class OrderClient(OrderClientInterface):
             # Update state
             if data:
                 self._update(order_data=data, state="canceled")
-            else:
-                raise CancellationError("Typically this means order was not found")
 
     def canceled(self):
         """Check if order was canceled
@@ -374,3 +371,11 @@ class OrderClient(OrderClientInterface):
             self._log("done.")
 
         return closed
+
+    def verbose(self):
+        """Turn on logging"""
+        self._verbose = True
+
+    def silent(self):
+        """Turn off logging"""
+        self._verbose = False

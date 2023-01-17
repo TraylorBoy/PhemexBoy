@@ -8,6 +8,7 @@ Phemex API Wrapper in Python
 - Spot uses USDT and future uses USD
 - Currently future methods only work for USD future account
 - Contracts close by last price
+- Orders are Post Only
 
 ## Installation
 ```
@@ -15,128 +16,206 @@ pip install phemexboy
 ```
 
 ## Usage
-### Instantiate PublicClient
-Public methods include:
-- price(symbol)
-- currencies()
-- symbols()
-- future_symbols()
-- ohlcv(symbol, tf, since)
-- timeframes()
-- timestamp(date)
+### Instantiate Proxy with API Key and Secret obtained from Phemex
+- Uses *python-dotenv* package for security
+- Simply place your api key and secret in a .env file in your root folder (at to .gitignore)
 ```
-from phemexboy import PhemexBoy
-pub_client = PhemexBoy()
-```
-### Instantiate AuthClient with API Key and Secret obtained from Phemex
-- Use *python-dotenv* package for security
-```
-import os
-from phemexboy import PhemexBoy
-from dotenv import load_dotenv
+from phemexboy.proxy import Proxy
 
-load_dotenv()
-client = PhemexBoy(os.getenv("KEY"), os.getenv("SECRET"))
+proxy = Proxy(verbose=False) # Defaults to True
+```
+
+### Optionally instantiate AuthClient and PublicClient
+- Proxy contains both auth and public methods
+- PublicClient does not require .env file
+```
+from phemexboy.api.client import AuthClient
+from phemexboy.public import PublicClient
+
+auth_client = AuthClient()
+pub_client = PublicClient()
+```
+
+## PublicClient API
+---
+
+### Retrieve all timeframes offered on Phemex
+```
+proxy.timeframes()
+```
+
+### Retrieve all market codes currently offered on Phemex
+```
+proxy.codes()
 ```
 
 ### Retrieve all currencies offered on Phemex
 ```
-client.currencies()
+proxy.currencies()
+```
+
+### Create a unified market symbol needed to interact with other methods
+```
+proxy.symbol(base='BTC', quote='USD', code='spot') # sBTCUSDT
+proxy.symbol(base='BTC', quote='USD', code='future') # BTC/USD:USD
 ```
 
 ### Retrieve the price of a specific pairing
 ```
-client.price(symbol='sBTCUSDT') # Spot price
-client.price(symbol='BTC/USD:USD') # Future price
+spot_symbol = proxy.symbol(base='BTC', quote='USD', code='spot')
+spot_price = proxy.price(symbol=spot_symbol)
+
+future_symbol = proxy.symbol(base='BTC', quote='USD', code='future')
+future_price = proxy.price(symbol=future_symbol)
 ```
 
-### Retrieve all spot and future symbols
+### Retrieve candlestick data
 ```
-client.symbols() # Spot symbols
-client.future_symbols() # Future symbols
+spot_symbol = proxy.symbol(base='BTC', quote='USD', code='spot')
+future_symbol = proxy.symbol(base='BTC', quote='USD', code='future')
+since = "2022-01-30" # Start at date
+
+spot_ohlcv = proxy.ohlcv(symbol=spot_symbol, tf="1m", since=since)
+future_ohlcv = proxy.ohlcv(symbol=future_symbol, tf="1m")
 ```
 
+### Retrieve exchange status
+```
+proxy.status()
+```
+
+### Retrieve exchange orderbook for symbol
+```
+spot_symbol = proxy.symbol(base='BTC', quote='USD', code='spot')
+future_symbol = proxy.symbol(base='BTC', quote='USD', code='future')
+
+spot_book = proxy.orderbook(symbol=spot_symbol)
+future_book = proxy.orderbook(symbol=future_symbol)
+```
+
+## AuthClient API
+---
 ### Retrieve spot and future balances
 - Uses currencies instead of symbols
 ```
-client.balance(of='USDT') # Spot balance
-client.balance(of='USD') # Future balance
+spot_bal = proxy.balance(currency="USDT", code="spot")
+fut_bal = proxy.balance(currency="USD", code="future")
 ```
 
 ### Convert percent of USDT account into crypto amount
 - Used for spot purchases, when selling crypto you do not need to use this method
 ```
-# Buy BTC with 21% of full account
-amt = client.usd_converter(symbol='sBTCUSDT', percent=21)
-order_id = client.buy(symbol='sBTCUSDT', type='market', amt)
+from phemexboy.helpers.conversions import usdt_to_crypto
+
+# Buy BTC with 90% of full account
+type = 'limit'
+symbol = proxy.symbol(base='BTC', quote='USD', code='spot')
+
+price = proxy.price(symbol=symbol) - 0.1
+usdt_bal = proxy.balance(currency="USDT", code="spot")
+amount = usdt_to_crypto(usdt_balance=usdt_bal, price=price, percent=90)
+
+order = proxy.buy(symbol=symbol, type=type, amount=amount, price=price)
 ```
 
 ### Buy/sell crypto on spot
 ```
 # Limit Buy
-amt = client.usd_converter(symbol='sBTCUSDT', percent=100) # Amount to purchase
-price = client.price(symbol='sBTCUSDT') # Price to place limit order at
-order_id = client.buy(symbol='sBTCUSDT', type='limit', amount=amt, price=price)
+type = 'limit'
+symbol = proxy.symbol(base='BTC', quote='USD', code='spot')
+
+price = proxy.price(symbol=symbol) - 0.1 # Price to place limit order at
+usdt_bal = proxy.balance(currency="USDT", code="spot")
+amount = usdt_to_crypto(usdt_balance=usdt_bal, price=price, percent=90) # Amount to purchase
+
+order = proxy.buy(symbol=symbol, type=type, amount=amount, price=price) # Returns OrderClient
 
 # Market Buy
-amt = client.usd_converter(symbol='sBTCUSDT', percent=100)
-order_id = client.buy(symbol='sBTCUSDT', type='market', amount=amt)
+type = "market"
+symbol = proxy.symbol(base='BTC', quote='USD', code='spot')
+amount = usdt_to_crypto(usdt_balance=usdt_bal, price=pub_client.price(symbol), percent=90)
+
+order = proxy.buy(symbol=symbol, type=type, amount=amount)
 
 # Limit Sell
-amt = client.balance(of='BTC') # Amount to sell
-price = client.price(symbol='sBTCUSDT')
-order_id = client.sell(symbol='sBTCUSDT', type='limit', amount=amt, price=price)
+type = "limit"
+price = 100000
+symbol = proxy.symbol(base='BTC', quote='USD', code='spot')
+amount = auth_client.balance(currency="BTC", code="spot") # Just need current BTC balance
+
+order = proxy.sell(symbol=symbol, type=type, amount=amount, price=price)
 
 # Market Sell
-amt = client.balance(of='BTC')
-order_id = client.sell(symbol='sBTCUSDT', type='market', amount=amt)
+type = "market"
+symbol = proxy.symbol(base='BTC', quote='USD', code='spot')
+amount = auth_client.balance(currency="BTC", code="spot")
 
-# Cancel limit order
-resp = client.cancel(id=order_id, symbol='sBTCUSDT')
-
-# Cancel all orders
-resp = client.cancel_all(symbol='sBTCUSDT')
+order = auth_client.sell(symbol=symbol, type=type, amount=amount)
 ```
 
 ### Change leverage on future
 ```
-client.leverage(amount=10, symbol='BTC/USD:USD')
+symbol = proxy.symbol(base='BTC', quote='USD', code='future')
+lev_amount = 10
+
+success = proxy.leverage(amount=lev_amount, symbol=symbol) # Returns True/False
+```
+
+### Calculate stop loss and take profit for Future position
+```
+from phemexboy.helpers.conversions import stop_loss, take_profit
+
+symbol = proxy.symbol(base="BTC", quote="USD", code="future")
+amount = 1
+type = "limit"
+price = 9000
+sl = stop_loss(price=price, percent=1, pos="long") # 1% from current price
+tp = take_profit(price=price, percent=2, pos="long") # 2% above current price
+
+order = proxy.long(symbol=symbol, type=type, amount=amount, price=price, sl=sl, tp=tp)
 ```
 
 ### Open a long/short position
 - Amount is in contracts
-- Stoploss (sl) and Takeprofit (tp) are not needed
+- Stoploss (sl) and Takeprofit (tp) are not required, however you will have to call position.close() in order to manually close it
+- You can have a sl and not a tp or vice versa
 ```
-# Limit Long
-price = client.price('BTC/USD:USD')
-sl = price - (price * 0.01) # 1% from current price
-tp = price + (price * 0.02) # 2% above current price
-order_id = client.long(symbol='BTC/USD:USD', type='limit', amount=1, price=price, sl=sl, tp=tp)
+symbol = proxy.symbol(base="BTC", quote="USD", code="future")
+amount = 1
 
-# Cancel order
-client.cancel(id=order_id, symbol='BTC/USD:USD')
+# Limit Long
+type = "limit"
+price = 9000
+sl = stop_loss(price=price, percent=1, pos="long")
+tp = take_profit(price=price, percent=2, pos="long")
+
+order = proxy.long(symbol=symbol, type=type, amount=amount, price=price, sl=sl, tp=tp) # TP and SL
 
 # Market Long
-order_id = client.long(symbol='BTC/USD:USD', type='market', amount=1)
+type = "market"
+sl = stop_loss(price=price, percent=1, pos="long")
+
+order = proxy.long(symbol=symbol, type=type, amount=amount, sl=sl) # No TP
 
 # Limit Short
-price = client.price('BTC/USD:USD')
-sl = price + (price * 0.01) # 1% above current price
-tp = price - (price * 0.02) # 2% from current price
-order_id = client.short(symbol='BTC/USD:USD', type='limit', amount=1, price=price, sl=sl, tp=tp)
+price = proxy.price(symbol=symbol)
+tp = take_profit(price=price, percent=2, pos="short") # 2% below current price
+type = "limit"
+price = 100000
+
+order = proxy.short(symbol=symbol, type=type, amount=amount, price=price, tp=tp) # No SL
 
 # Market Short
-order_id = client.short(symbol='BTC/USD:USD', type='market', amount=1)
+type = "market"
 
-# Close Position
-client.close(symbol='BTC/USD:USD', amount=1)
+order = proxy.short(symbol=symbol, type=type, amount=amount) # No TP or SL
 ```
 
-### Check Position Status
-```
-client.positions(symbol='BTC/USD:USD') # Returns position information
-client.in_position(symbol='BTC/USD:USD') # Returns if in a position or not
-```
+## OrderClient API
+---
+
+## PositionClient API
+---
 
 ## Test
 

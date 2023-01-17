@@ -4,10 +4,10 @@ import unittest
 
 from phemexboy.api.public import PublicClient
 from phemexboy.api.auth.client import AuthClient
-from phemexboy.interfaces.auth.position_interface import PositionClientInterface
+from phemexboy.helpers.conversions import stop_loss, take_profit
 
 
-class TestPositionClient(unittest.TestCase):
+class TestFuture(unittest.TestCase):
     AUTH_CLIENT = AuthClient()
     PUB_CLIENT = PublicClient()
 
@@ -23,9 +23,16 @@ class TestPositionClient(unittest.TestCase):
         # Limit long
         type = "limit"
         price = 9000
+        sl = stop_loss(price=price, percent=1, pos="long")
+        tp = take_profit(price=price, percent=2, pos="long")
 
-        order = auth_client.long(symbol=symbol, type=type, amount=amount, price=price)
+        order = auth_client.long(
+            symbol=symbol, type=type, amount=amount, price=price, sl=sl, tp=tp
+        )
         self.assertEqual(order.pending(), True)
+
+        # Test __str__
+        print(order)
 
         order.cancel()
         self.assertEqual(order.canceled(), True)
@@ -42,7 +49,7 @@ class TestPositionClient(unittest.TestCase):
 
         # Market long
         type = "market"
-        order = auth_client.long(symbol=symbol, type=type, amount=amount, price=price)
+        order = auth_client.long(symbol=symbol, type=type, amount=amount)
         self.assertEqual(order.closed(), True)
 
         position = auth_client.position(symbol=symbol)
@@ -57,7 +64,7 @@ class TestPositionClient(unittest.TestCase):
         # Market short
         # Tests order close amount
         type = "market"
-        order = auth_client.long(symbol=symbol, type=type, amount=2, price=price)
+        order = auth_client.short(symbol=symbol, type=type, amount=2)
         self.assertEqual(order.closed(), True)
 
         position = auth_client.position(symbol=symbol)

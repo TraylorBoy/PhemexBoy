@@ -2,8 +2,6 @@
 __version__ = "2.0.0"
 
 # TODO: Update README - Add examples
-# TODO: Redo logging for order and position
-# TODO: Remove clients from order and position and use proxy instead - Fix tests
 
 from ccxt import NetworkError, ExchangeError
 
@@ -638,3 +636,13 @@ class Proxy(PublicClientInterface, AuthClientInterface):
             self._log("done.")
 
         return data
+
+    # ------------------------------ Client Methods ------------------------------ #
+
+    def verbose(self):
+        """Turn on logging"""
+        self._verbose = False
+
+    def silent(self):
+        """Turn off logging"""
+        self._verbose = False

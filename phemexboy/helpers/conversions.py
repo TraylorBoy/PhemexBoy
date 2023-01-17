@@ -1,5 +1,7 @@
 """Asset conversions"""
 
+from phemexboy.exceptions import InvalidPositionError
+
 
 def usdt_to_crypto(usdt_balance: float, price: float, percent: int):
     """Converts USDT quote currency to base currency based on percentage
@@ -14,3 +16,47 @@ def usdt_to_crypto(usdt_balance: float, price: float, percent: int):
     """
     amount = (usdt_balance / price) * (percent / 100)
     return round(amount, 6)
+
+
+def stop_loss(price: float, percent: int, pos: str):
+    """Calculate stop loss price
+
+    Args:
+        price (float): Limit order price
+        percent (int): Percent from price
+        pos (str): Position type ('long' or 'short')
+
+    Raises:
+        InvalidPositionError: Pos must be either "short" or "long"
+
+    Returns:
+        Float: Stop loss price
+    """
+    if pos == "short":
+        return price + (price * (percent / 100))
+    elif pos == "long":
+        return price - (price * (percent / 100))
+    else:
+        raise InvalidPositionError('Pos must be either "short" or "long"')
+
+
+def take_profit(price: float, percent: int, pos: str):
+    """Calculate take profit price
+
+    Args:
+        price (float): Limit order price
+        percent (int): Percent from price
+        pos (str): Position type ('long' or 'short')
+
+    Raises:
+        InvalidPositionError: Pos must be either "short" or "long"
+
+    Returns:
+        Float: Take profit price
+    """
+    if pos == "short":
+        return price - (price * (percent / 100))
+    elif pos == "long":
+        return price + (price * (percent / 100))
+    else:
+        raise InvalidPositionError('Pos must be either "short" or "long"')

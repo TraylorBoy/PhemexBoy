@@ -154,3 +154,11 @@ class PositionClient(PositionClientInterface):
             Bool: Position successfully closed or not
         """
         return self._state == "closed"
+
+    def verbose(self):
+        """Turn on logging"""
+        self._verbose = True
+
+    def silent(self):
+        """Turn off logging"""
+        self._verbose = False
