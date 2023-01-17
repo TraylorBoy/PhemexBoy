@@ -11,7 +11,7 @@ class TestPositionClient(unittest.TestCase):
     AUTH_CLIENT = AuthClient()
     PUB_CLIENT = PublicClient()
 
-    def test_position(self):
+    def test_future(self):
         auth_client = self.AUTH_CLIENT
         pub_client = self.PUB_CLIENT
         symbol = pub_client.symbol(base="BTC", quote="USD", code="future")

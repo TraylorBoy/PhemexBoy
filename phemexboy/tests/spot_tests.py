@@ -8,11 +8,11 @@ from phemexboy.interfaces.auth.order_interface import OrderClientInterface
 from phemexboy.helpers.conversions import usdt_to_crypto
 
 
-class TestOrderClient(unittest.TestCase):
+class TestSpot(unittest.TestCase):
     AUTH_CLIENT = AuthClient()
     PUB_CLIENT = PublicClient()
 
-    def test_order(self):
+    def test_spot(self):
         auth_client = self.AUTH_CLIENT
         pub_client = self.PUB_CLIENT
         symbol = pub_client.symbol(base="BTC", quote="USD", code="spot")

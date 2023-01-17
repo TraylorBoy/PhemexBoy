@@ -13,7 +13,10 @@ from ccxt import NetworkError, ExchangeError
 
 
 class OrderClient(OrderClientInterface):
-    def __init__(self, order_data: dict, client: AuthClientInterface):
+    def __init__(
+        self, order_data: dict, client: AuthClientInterface, verbose: bool = False
+    ):
+        self._verbose = verbose
         self._update(order_data=order_data, state="None")
         self._client = client
         self._pub_client = PublicClient()
@@ -24,6 +27,16 @@ class OrderClient(OrderClientInterface):
             out += f"{key}: {self._order[key]}\n"
         return out
 
+    def _log(self, msg: str, end: str = None):
+        """Print message to output if not silent
+
+        Args:
+            msg (str): Message to print to output
+            end (str): String appended after the last value. Default a newline.
+        """
+        if self._verbose:
+            print(msg, end=end)
+
     def _update(self, order_data: dict = None, state: str = None):
         """Set order data and state
 
@@ -32,6 +45,8 @@ class OrderClient(OrderClientInterface):
             state (str): Pending, Cancelled, or Closed. Defaults to None.
         """
         if order_data:
+            self._log("Updating order data", end=", ")
+
             if "info" in order_data.keys():
                 # Extract proper symbol and remove status
                 # Status is managed by client state
@@ -43,8 +58,12 @@ class OrderClient(OrderClientInterface):
             self._order = order_data
             self._order["symbol"] = symbol
 
+            self._log("done.")
+
         if state:
+            self._log(f"Updating state to {state}", end=", ")
             self._state = state
+            self._log("done.")
 
     def query(self, request: str):
         """Retrieve order information data
@@ -62,7 +81,10 @@ class OrderClient(OrderClientInterface):
             raise InvalidRequestError(
                 "Please print this object in order to see the correct request params"
             )
-        return self._order[request]
+        self._log(f"Retrieving order data based on {request}", end=", ")
+        data = self._order[request]
+        self._log("done.")
+        return data
 
     def edit(self, amount: float, price: float):
         """Edit pending order
@@ -84,6 +106,10 @@ class OrderClient(OrderClientInterface):
         if type == "market":
             raise OrderTypeError("Order type must be limit in order to edit")
 
+        self._log(
+            f"Attempting to edit order with {amount} amount at price {price}", end=", "
+        )
+
         # Reopen order
         if self.pending():
             self.cancel()
@@ -92,8 +118,16 @@ class OrderClient(OrderClientInterface):
         client = None
         try:
             if side == "buy":
+                self._log(
+                    f"Attempting to place {type} buy order for {symbol} at {price} using {amount}",
+                    end=", ",
+                )
                 client = self._client.buy(symbol, type, amount, price)
             if side == "sell":
+                self._log(
+                    f"Attempting to place {type} sell order for {symbol} at {price} using {amount}",
+                    end=", ",
+                )
                 client = self._client.sell(symbol, type, amount, price)
         except NetworkError as e:
             print(f"NetworkError - AuthClient failed to place order: {e}")
@@ -101,8 +135,9 @@ class OrderClient(OrderClientInterface):
             print(f"ExchangeError - AuthClient failed to place order: {e}")
         except Exception as e:
             print(f"AuthClient failed to place order: {e}")
-
-        self._order = deepcopy(client._order)
+        else:
+            self._order = deepcopy(client._order)
+            self._log("done.")
 
     def cancel(self):
         """Cancel pending order
@@ -122,6 +157,7 @@ class OrderClient(OrderClientInterface):
         symbol = self.query("symbol")
         data = None
         try:
+            self._log(f"Attempting to cancel order for {symbol} with id {id}", end=", ")
             # Cancel order
             data = self._client.cancel(id, symbol)
         except NetworkError as e:
@@ -134,12 +170,14 @@ class OrderClient(OrderClientInterface):
             )
         except Exception as e:
             print(f"AuthClient failed to cancel order for {symbol} with id {id}: {e}")
-
-        # Update state
-        if data:
-            self._update(order_data=data, state="canceled")
         else:
-            raise CancellationError("Typically this means order was not found")
+            self._log("done.")
+        finally:
+            # Update state
+            if data:
+                self._update(order_data=data, state="canceled")
+            else:
+                raise CancellationError("Typically this means order was not found")
 
     def canceled(self):
         """Check if order was canceled
@@ -163,7 +201,9 @@ class OrderClient(OrderClientInterface):
         id = self.query("id")
         symbol = self.query("symbol")
 
+        data = None
         try:
+            self._log(f"Attempting to retrieve orders for {symbol}", end=", ")
             data = self._client.orders(symbol)
         except NetworkError as e:
             print(
@@ -175,12 +215,14 @@ class OrderClient(OrderClientInterface):
             )
         except Exception as e:
             print(f"AuthClient failed to retrieve orders for {symbol}: {e}")
-
-        if data:
-            for order in data:
-                if order["id"] == id:
-                    self._update(order_data=order, state="pending")
-                    break
+        else:
+            self._log("done.")
+        finally:
+            if data:
+                for order in data:
+                    if order["id"] == id:
+                        self._update(order_data=order, state="pending")
+                        break
 
         return self._state == "pending"
 
@@ -201,6 +243,7 @@ class OrderClient(OrderClientInterface):
         found = False
         data = None
         try:
+            self._log(f"Attempting to retrieve orders for {symbol}", end=", ")
             data = self._client.orders(symbol)
         except NetworkError as e:
             print(
@@ -212,14 +255,16 @@ class OrderClient(OrderClientInterface):
             )
         except Exception as e:
             print(f"AuthClient failed to retrieve orders for {symbol}: {e}")
+        else:
+            self._log("done.")
+        finally:
+            if data:
+                for res in data:
+                    if res["id"] == id:
+                        found = True
 
-        if data:
-            for res in data:
-                if res["id"] == id:
-                    found = True
-
-        if not found:
-            self._update(state="closed")
+            if not found:
+                self._update(state="closed")
 
         return self._state == "closed"
 
@@ -240,6 +285,7 @@ class OrderClient(OrderClientInterface):
         Returns:
             Bool: Order successfully placed
         """
+        type = self.query("type")
         if type == "market":
             raise OrderTypeError("Order type must be limit in order to retry")
 
@@ -251,6 +297,7 @@ class OrderClient(OrderClientInterface):
 
         try:
             while not self.pending() and self.closed():
+                self._log(f"Retrying order placement...")
                 self.edit(amount=amount, price=price) if price else self.edit(
                     amount=amount, price=self._pub_client.price(symbol=symbol) - 0.1
                 )
@@ -270,6 +317,8 @@ class OrderClient(OrderClientInterface):
             )
         except Exception as e:
             print(f"PublicClient failed to retrieve price for {symbol}: {e}")
+        else:
+            self._log("Order placed, done.")
         finally:
             self.closed()
 
@@ -286,24 +335,42 @@ class OrderClient(OrderClientInterface):
             price (float): Price to retry order at. Defaults to None (will use current market price).
             tries (int): Number of times to retry. Defaults to 1.
 
+        Raises:
+            OrderTypeError: Order type must be limit in order to close
+            Exception: Any
+
         Returns:
             Bool: Order successfully filled
         """
+        type = self.query("type")
+        if type == "market":
+            raise OrderTypeError("Order type must be limit in order to close")
+
+        self._log(
+            f"Waiting until order is filled is canceled after {tries} number of retries...",
+            end=", ",
+        )
+
         i = 0
         closed = False
-        while i <= tries:
-            sleep(wait)
+        try:
+            while i <= tries:
+                sleep(wait)
 
-            if self.closed():
-                closed = True
-                break
+                if self.closed():
+                    closed = True
+                    break
 
-            if retry and not self.closed():
-                self.retry(price=price)
+                if retry and not self.closed():
+                    self.retry(price=price)
 
-            i += 1
+                i += 1
 
-        if not closed and self.pending():
-            self.cancel()
+            if not closed and self.pending():
+                self.cancel()
+        except Exception:
+            raise
+        else:
+            self._log("done.")
 
         return closed
