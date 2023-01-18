@@ -26,12 +26,20 @@ class OrderClientInterface(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def edit(self, amount: float, price: float):
+    def edit(
+        self,
+        amount: float,
+        price: float,
+        sl_percent: int = None,
+        tp_percent: int = None,
+    ):
         """Edit pending order
 
         Args:
             amount (float): Amount of base currency you are using for order
             price (float): Edit limit order price
+            sl_percent: Set stop loss percent from price. Defaults to None.
+            tp_percent: Set take profit percent from price. Defaults to None.
 
         Raises:
             NotImplementedError: Must implement the method when subclassing
@@ -75,12 +83,20 @@ class OrderClientInterface(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def retry(self, wait: int = 2, price: float = None):
+    def retry(
+        self,
+        wait: int = 2,
+        price: float = None,
+        sl_percent: int = None,
+        tp_percent: int = None,
+    ):
         """Ensure limit order was successfully placed at current ask price
 
         Args:
             wait (int): The amount of time to wait until retry. Defaults to 2 seconds.
             price (float): Price to retry order at. Defaults to None.
+            sl_percent: Set stop loss percent from price. Defaults to None.
+            tp_percent: Set take profit percent from price. Defaults to None.
 
         Raises:
             NotImplementedError: Must implement before subclassing
@@ -89,7 +105,13 @@ class OrderClientInterface(abc.ABC):
 
     @abc.abstractmethod
     def close(
-        self, retry: bool = None, wait: int = 2, price: float = None, tries: int = 1
+        self,
+        retry: bool = None,
+        wait: int = 2,
+        price: float = None,
+        tries: int = 1,
+        sl_percent: int = None,
+        tp_percent: int = None,
     ):
         """Waits until order is filled
 
@@ -98,6 +120,8 @@ class OrderClientInterface(abc.ABC):
             wait (int): The amount of time to wait until retry. Defaults to 2 seconds.
             price (float): Price to retry order at. Defaults to None (will use current market price).
             tries (int): Number of times to retry. Defaults to 1.
+            sl_percent: Set stop loss percent from price. Defaults to None.
+            tp_percent: Set take profit percent from price. Defaults to None.
 
         Raises:
             NotImplementedError: Must implement before subclassing

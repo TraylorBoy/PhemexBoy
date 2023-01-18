@@ -27,3 +27,6 @@ test-future:
 
 test-future-trade:
 	python3 -m unittest -f -v phemexboy.tests.future_tests.TestFuture.test_trade
+
+test-order-edit-update:
+	python3 -m unittest -f -v phemexboy.tests.proxy_tests.TestProxy.test_order_edit_update

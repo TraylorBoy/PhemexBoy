@@ -131,7 +131,11 @@ class AuthClient(AuthClientInterface):
             self._endpoint.create_order, symbol, type, "buy", amount, price, params
         )
 
-        return OrderClient(data, self)
+        code = "spot"
+        if "type" in params.keys() and params["type"] == "swap":
+            code = "future"
+
+        return OrderClient(data, self, code)
 
     def sell(
         self,
@@ -158,7 +162,12 @@ class AuthClient(AuthClientInterface):
         data = self._worker(
             self._endpoint.create_order, symbol, type, "sell", amount, price, params
         )
-        return OrderClient(data, self)
+
+        code = "spot"
+        if "type" in params.keys() and params["type"] == "swap":
+            code = "future"
+
+        return OrderClient(data, self, code)
 
     def position(self, symbol: str):
         """Create a PositionClient representing the open position for symbol

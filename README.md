@@ -23,6 +23,10 @@ pip install phemexboy
 from phemexboy.proxy import Proxy
 
 proxy = Proxy(verbose=False) # Defaults to True
+
+# Turn logging on/off
+proxy.verbose()
+proxy.silent()
 ```
 
 ### Optionally instantiate AuthClient and PublicClient
@@ -213,22 +217,140 @@ order = proxy.short(symbol=symbol, type=type, amount=amount) # No TP or SL
 
 ## OrderClient API
 ---
+- Allows for interaction with order
+- edit, close, and retry are only allowed for limit orders
+- This API does not provide much use for market orders since it is automatically filled
+- Works with both spot and future markets
+```
+# Place limit order
+type = 'limit'
+symbol = proxy.symbol(base='BTC', quote='USD', code='spot')
+
+price = proxy.price(symbol=symbol) - 0.1 # Price to place limit order at
+usdt_bal = proxy.balance(currency="USDT", code="spot")
+amount = usdt_to_crypto(usdt_balance=usdt_bal, price=price, percent=90) # Amount to purchase
+
+order = proxy.buy(symbol=symbol, type=type, amount=amount, price=price) # Returns OrderClient
+
+# Turn logging on/off
+order.verbose()
+order.silent()
+
+# Output all order data (also provides accurate params for query())
+print(order)
+
+# Query order data
+print(order.query(request='price'))
+
+# Check order state
+print(order.pending())
+
+# Edit order amount and price
+price = 1001
+usdt_bal = proxy.balance(currency="USDT", code="spot")
+amount = usdt_to_crypto(usdt_balance=usdt_bal, price=price, percent=90)
+order.edit(amount=amount, price=price)
+print(order)
+
+# Edit order sl and tp for long/short order
+type = "limit"
+amount = 1
+price = 9000
+sl = stop_loss(price=price, percent=1, pos="long")
+tp = take_profit(price=price, percent=2, pos="long")
+order = proxy.long(symbol, type, amount, price, sl, tp)
+order.verbose()
+
+price = 9001
+amount = 2
+sl_percent = 2
+tp_percent = 3
+order.edit(amount=amount, price=price, sl_percent=3, tp_percent=4) # Automatically calls stop_loss and take_profit
+
+# Check if order was filled
+print(order.closed())
+
+# Cancel order
+order.cancel()
+print(order.canceled())
+
+# Ensure order is in orderbook
+if not order.pending():
+  if order.retry(price=price): # Default attempts to retry at current ask price
+    # Order placed in orderbook
+    print(order)
+
+# Ensure order is filled
+if order.close(retry=True, wait=20, tries=5): # Attempts to fill order at current ask price
+  # After waiting 20 seconds for each try
+  # the order is filled
+  print(order.closed())
+```
 
 ## PositionClient API
 ---
+- Allows for interaction with position
+- Works only on future markets
+```
+# Place limit order
+symbol = proxy.symbol(base="ETH", quote="USD", code="future")
+amount = 2 # Contracts
+type = "limit"
+price = proxy.price(symbol=symbol) - 0.01
+order = proxy.long(symbol=symbol, type=type, amount=amount, price=price)
+
+# Try to close order within 1 minute at current ask price
+if order.close(retry=True, wait=10, tries=6):
+  # Retrieve position
+  position = proxy.position(symbol=symbol)
+
+  # Turn logging on/off
+  position.verbose()
+  position.silent()
+
+  # Output all position data (also provides accurate params for query())
+  print(position)
+
+  # Query position data
+  print(position.query(request='contracts'))
+
+  # Close *n* contracts
+  position.close(1)
+  print(position.query('contracts') == 1)
+
+  # Close all contracts
+  position.close(all=True)
+
+  # Check state
+  print(position.closed())
+```
 
 ## Test
 
 - Runs the tests on the PhemexBoy module
 - Will require .env file with *KEY={API_KEY}* and *SECRET={API_SECRET}*
-- May want to modify, I included manual tests
+- Does test auth methods which will require funds in both spot and future accounts
 
 ```
-make test
-```
+make test-pub: Test PublicClient
 
-or
+make test-auth: Test AuthClient
 
-```
-python3 test
+make test-proxy: Test Proxy
+
+make test-proxy-auth: Test Proxy AuthClient
+
+make test-proxy-public: Test Proxy PublicClient
+
+make test-order-and-position: Test OrderClient and PositionClient
+
+make test-spot-trade: Test trade example
+
+make test-spot: Test OrderClient
+
+make test-future: Test PositionClient
+
+make test-future-trade: Test trade example
+
+make test-order-edit-update: Test order edit with sl/tp
 ```

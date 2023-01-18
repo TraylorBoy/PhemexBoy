@@ -1,7 +1,8 @@
 """API Wrapper Module"""
 __version__ = "2.0.0"
 
-# TODO: Update README - Add examples
+# TODO: Fix docstrings - Raises
+# TODO: Redo exceptions (either raise or handle)
 
 from ccxt import NetworkError, ExchangeError
 
@@ -119,7 +120,7 @@ class Proxy(PublicClientInterface, AuthClientInterface):
             code (str): Market code (ex. 'spot')
 
         Raises:
-            InvalidCode: Codes may be found by calling proxy.codes()
+            InvalidCodeError: Codes may be found by calling proxy.codes()
             Exception: PublicClient failed to create symbol
 
         Returns:
@@ -137,7 +138,7 @@ class Proxy(PublicClientInterface, AuthClientInterface):
             print(
                 "\nPlease call proxy.codes() in order to retrieve the current market codes that are offered\n"
             )
-            self.codes()
+            print(self.codes())
         except Exception as e:
             print(f"PublicClient failed to create symbol: {e}")
         else:

@@ -12,6 +12,7 @@ from phemexboy.exceptions import (
     InvalidRequestError,
     OrderTypeError,
 )
+from phemexboy.helpers.conversions import stop_loss, take_profit
 
 
 class TestProxy(unittest.TestCase):
@@ -182,3 +183,46 @@ class TestProxy(unittest.TestCase):
             self.assertEqual(position.query("contracts"), 1)
             position.close(all=True)
             self.assertEqual(position.closed(), True)
+
+    def test_order_edit_update(self):
+        proxy = Proxy(verbose=False)
+        symbol = proxy.symbol(base="BTC", quote="USD", code="future")
+
+        # Test init
+        type = "limit"
+        amount = 1
+        price = 9000
+        sl = stop_loss(price=price, percent=1, pos="long")
+        tp = take_profit(price=price, percent=2, pos="long")
+        order = proxy.long(symbol, type, amount, price, sl, tp)
+        order.verbose()
+        self.assertIsInstance(order, OrderClientInterface)
+        self.assertIsInstance(order._client, AuthClientInterface)
+        self.assertIsInstance(order._pub_client, PublicClientInterface)
+        self.assertEqual(order._state, "None")
+        self.assertIsInstance(order._order, dict)
+        self.assertEqual(order._code, "future")
+
+        # Test __str__
+        print(f"Testing order __str__: \n{order}")
+
+        # Test query
+        self.assertEqual(order.query("price"), price)
+
+        # Test InvalidRequestError
+        with self.assertRaises(InvalidRequestError):
+            order.query("not a param")
+
+        # Test pending
+        self.assertEqual(order.pending(), True)
+
+        # Test edit
+        price = 9001
+        amount = 2
+        order.edit(amount, price, 3, 4)
+        self.assertEqual(order.query("price"), price)
+        self.assertEqual(order.query("amount"), amount)
+
+        # Test cancel
+        order.cancel()
+        self.assertEqual(order.canceled(), True)
