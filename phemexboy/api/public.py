@@ -4,21 +4,18 @@ import ccxt
 
 from phemexboy.interfaces.public_interface import PublicClientInterface
 from phemexboy.exceptions import InvalidCodeError
-from botboy import BotBoy
+from botboy.core import BotBoy
 
 
 class PublicClient(PublicClientInterface):
     def __init__(self):
         self._endpoint = ccxt.phemex({"enableRateLimit": True})
-        self._bot = BotBoy(name="PubBot")
 
-    def _worker(self, task: object, *args: tuple, wait: bool = True):
+    def _worker(self, task: object, *args):
         """Runs tasks on separate thread
 
         Args:
             task (object): Method to execute on separate thread
-            *args (list): Parameters for task
-            wait (bool, optional): Wait for execution to finish. Defaults to True.
 
         Raises:
             Exception: Any
@@ -28,12 +25,9 @@ class PublicClient(PublicClientInterface):
         """
         try:
             self._endpoint.load_markets(reload=True)
-            self._bot.task = task
-            if len(args) > 0:
-                self._bot.execute(*args, wait=wait)
-            else:
-                self._bot.execute(wait=wait)
-            return self._bot.result
+            worker = BotBoy(name="PublicWorker", task=task, params=args)
+            result = worker.execute()
+            return result
         except Exception:
             raise
 

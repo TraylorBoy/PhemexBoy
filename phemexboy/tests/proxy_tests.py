@@ -9,10 +9,9 @@ from phemexboy.interfaces.auth.position_interface import PositionClientInterface
 from phemexboy.interfaces.public_interface import PublicClientInterface
 from phemexboy.exceptions import (
     InvalidCodeError,
-    InvalidRequestError,
     OrderTypeError,
 )
-from phemexboy.helpers.conversions import stop_loss, take_profit
+from phemexboy.helpers.conversions import stop_loss, take_profit, usdt_to_crypto
 
 
 class TestProxy(unittest.TestCase):
@@ -103,7 +102,85 @@ class TestProxy(unittest.TestCase):
         # Test leverage
         self.assertEqual(proxy.leverage(10, proxy.symbol("BTC", "USD", "future")), True)
 
-    def test_order_and_position(self):
+    def test_spot_and_order(self):
+        proxy = Proxy()
+        symbol = proxy.symbol(base="BTC", quote="USD", code="spot")
+
+        # Limit Buy
+        type = "limit"
+        usdt_bal = proxy.balance(currency="USDT", code="spot")
+        amount, price = usdt_to_crypto(usdt_balance=usdt_bal, price=proxy.price(), percent=100)
+
+        order = proxy.buy(symbol=symbol, type=type, amount=amount, price=price)
+        self.assertIsInstance(order, OrderClientInterface)
+        self.assertEqual(order.pending(), True)
+        print(f"Testing __str__: \n{order}")
+
+        price = 1001
+        amount = usdt_to_crypto(usdt_balance=usdt_bal, price=price, percent=100)
+        order.edit(amount=amount, price=price)
+        self.assertEqual(order.query(request="price"), price)
+
+        order.cancel()
+        self.assertEqual(order.canceled(), True)
+
+        # Market Buy
+        type = "market"
+        amount = usdt_to_crypto(
+            usdt_balance=usdt_bal, price=proxy.price(symbol), percent=100
+        )
+        order = proxy.buy(symbol=symbol, type=type, amount=amount)
+        self.assertEqual(order.closed(), True)
+        self.assertEqual(order.pending(), False)
+
+        # Limit Sell
+        type = "limit"
+        price = 100000
+        amount = proxy.balance(currency="BTC", code="spot")
+        order = proxy.sell(symbol=symbol, type=type, amount=amount, price=price)
+        self.assertEqual(order.pending(), True)
+
+        price = 90000
+        order.edit(amount=amount, price=price)
+        self.assertEqual(order.query(request="price"), price)
+
+        order.cancel()
+        self.assertEqual(order.canceled(), True)
+
+        # Market Sell
+        type = "market"
+        amount = proxy.balance(currency="BTC", code="spot")
+        order = proxy.sell(symbol=symbol, type=type, amount=amount)
+        self.assertEqual(order.closed(), True)
+        self.assertEqual(order.pending(), False)
+
+        # Limit Buy
+        type = "limit"
+        usdt_bal = proxy.balance(currency="USDT", code="spot")
+        amount = usdt_to_crypto(
+            usdt_balance=usdt_bal, price=proxy.price(symbol), percent=100
+        )
+        order = proxy.buy(symbol=symbol, type=type, amount=amount, price=price)
+
+        # Make sure order was placed and closed
+        print("Pending")
+        if not order.pending():
+            print("Retrying")
+            if order.retry():
+                self.assertEqual(order.pending(), True)
+
+        print("Closing")
+        if order.close(retry=True, wait=20, tries=5):
+            print("Closed")
+            self.assertEqual(order.closed(), True)
+
+            # Market Sell
+            print("Selling")
+            type = "market"
+            amount = proxy.balance(currency="BTC", code="spot")
+            proxy.sell(symbol=symbol, type=type, amount=amount)
+
+    def test_future_and_position(self):
         proxy = Proxy(verbose=False)
         symbol = proxy.symbol(base="BTC", quote="USD", code="future")
 
@@ -124,10 +201,6 @@ class TestProxy(unittest.TestCase):
 
         # Test query
         self.assertEqual(order.query("price"), price)
-
-        # Test InvalidRequestError
-        with self.assertRaises(InvalidRequestError):
-            order.query("not a param")
 
         # Test pending
         self.assertEqual(order.pending(), True)
@@ -174,10 +247,6 @@ class TestProxy(unittest.TestCase):
             # Test query
             self.assertEqual(position.query("contracts"), 2)
 
-            # Test InvalidRequestError
-            with self.assertRaises(InvalidRequestError):
-                position.query("not a param")
-
             # Test close
             position.close(1)
             self.assertEqual(position.query("contracts"), 1)
@@ -208,10 +277,6 @@ class TestProxy(unittest.TestCase):
 
         # Test query
         self.assertEqual(order.query("price"), price)
-
-        # Test InvalidRequestError
-        with self.assertRaises(InvalidRequestError):
-            order.query("not a param")
 
         # Test pending
         self.assertEqual(order.pending(), True)

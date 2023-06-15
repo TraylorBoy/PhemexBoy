@@ -75,12 +75,15 @@ class PositionClient(PositionClientInterface):
             print(
                 f"NetworkError - AuthClient failed to retrieve position for {symbol}: {e}"
             )
+            raise
         except ExchangeError as e:
             print(
                 f"ExchangeError - AuthClient failed to retrieve position for {symbol}: {e}"
             )
+            raise
         except Exception as e:
             print(f"AuthClient failed to retrieve position for {symbol}: {e}")
+            raise
         else:
             self._position = deepcopy(pos._position)
             self._log("done.")
@@ -92,6 +95,14 @@ class PositionClient(PositionClientInterface):
             return True
         return False
 
+    def requests(self):
+        """Returns a list of all request params
+
+        Returns:
+            List: Request params
+        """
+        return list(self._position.keys())
+
     def query(self, request: str):
         """Retrieve position information data
 
@@ -99,18 +110,26 @@ class PositionClient(PositionClientInterface):
             request (str): Type of data you want to retrieve from PositionClient
 
         Raises:
-            InvalidRequestError: Please print this object in order to see the correct request params
+            InvalidRequestError: PositionClient failed to retrieve data for {request}
 
         Returns:
             String: Requested order data
         """
-        if request not in list(self._position.keys()):
-            raise InvalidRequestError(
-                "Please print this object in order to see the correct request params"
+        data = None
+        try:
+            if request not in self.requests():
+                raise InvalidRequestError()
+
+            self._log(f"Retrieving position data based on {request}", end=", ")
+            data = self._position[request]
+        except InvalidRequestError:
+            print(
+                f"InvalidRequestError - PositionClient failed to retrieve data for {request}"
             )
-        self._log(f"Retrieving order data based on {request}", end=", ")
-        data = self._position[request]
-        self._log("done.")
+            print("Call requests() in order to retrieve valid params")
+            print(f"Params: {self.requests()}")
+        else:
+            self._log("done.")
         return data
 
     def close(self, amount: int = 1, all: bool = False):
@@ -121,7 +140,9 @@ class PositionClient(PositionClientInterface):
             all (bool): Close all contracts. Defaults to False.
 
         Raises:
-            Exception: AuthClient failed to open position
+            NetworkError: PositionClient failed to close position
+            ExchangeError: PositionClient failed to close position
+            Exception: PositionClient failed to close position
         """
         side = self.query("side")
         symbol = self.query("symbol")
@@ -139,8 +160,15 @@ class PositionClient(PositionClientInterface):
             if side == "short":
                 self._log("Attempting to close short position")
                 self._client.long(symbol, type, amount)
+        except NetworkError as e:
+            print(f"NetworkError - PositionClient failed to close position: {e}")
+            raise
+        except ExchangeError as e:
+            print(f"ExchangeError - PositionClient failed to close position: {e}")
+            raise
         except Exception as e:
-            print(f"AuthClient failed to open position: {e}")
+            print(f"PositionClient failed to close position: {e}")
+            raise
         else:
             self._log("Position closed, done.")
         finally:

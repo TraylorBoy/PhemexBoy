@@ -1,9 +1,6 @@
 """API Wrapper Module"""
 __version__ = "2.0.0"
 
-# TODO: Fix docstrings - Raises
-# TODO: Redo exceptions (either raise or handle)
-
 from ccxt import NetworkError, ExchangeError
 
 from .api.public import PublicClient
@@ -24,12 +21,15 @@ class Proxy(PublicClientInterface, AuthClientInterface):
             print(
                 f"NetworkError - Failed to initialize PublicClient and AuthClient: {e}"
             )
+            raise
         except ExchangeError as e:
             print(
                 f"ExchangeError - Failed to initialize PublicClient and AuthClient: {e}"
             )
+            raise
         except Exception as e:
             print(f"Failed to initialize PublicClient and AuthClient: {e}")
+            raise
         else:
             self._log("done.")
 
@@ -60,6 +60,7 @@ class Proxy(PublicClientInterface, AuthClientInterface):
             tfs = self._pub_client.timeframes()
         except Exception as e:
             print(f"PublicClient failed to retrieve timeframes: {e}")
+            raise
         else:
             self._log("done.")
 
@@ -80,6 +81,7 @@ class Proxy(PublicClientInterface, AuthClientInterface):
             codes = self._pub_client.codes()
         except Exception as e:
             print(f"PublicClient failed to retrieve codes: {e}")
+            raise
         else:
             self._log("done.")
 
@@ -102,10 +104,13 @@ class Proxy(PublicClientInterface, AuthClientInterface):
             currencies = self._pub_client.currencies()
         except NetworkError as e:
             print(f"NetworkError - PublicClient failed to retrieve currencies: {e}")
+            raise
         except ExchangeError as e:
             print(f"ExchangeError - PublicClient failed to retrieve currencies: {e}")
+            raise
         except Exception as e:
             print(f"PublicClient failed to retrieve currencies: {e}")
+            raise
         else:
             self._log("done.")
 
@@ -120,7 +125,7 @@ class Proxy(PublicClientInterface, AuthClientInterface):
             code (str): Market code (ex. 'spot')
 
         Raises:
-            InvalidCodeError: Codes may be found by calling proxy.codes()
+            InvalidCodeError: Wrong market code
             Exception: PublicClient failed to create symbol
 
         Returns:
@@ -128,19 +133,23 @@ class Proxy(PublicClientInterface, AuthClientInterface):
         """
         symbol = None
         try:
+            if code not in self.codes():
+                raise InvalidCodeError()
+
             self._log(
                 f"Creating symbol - base: {base}, quote: {quote}, code: {code},",
                 end=" ",
             )
             symbol = self._pub_client.symbol(base, quote, code)
         except InvalidCodeError as e:
-            print(f"PublicClient failed to create symbol: {e}")
+            print(f"PublicClient failed to create symbol for {base} and {quote}: {e}")
             print(
                 "\nPlease call proxy.codes() in order to retrieve the current market codes that are offered\n"
             )
-            print(self.codes())
+            print(f"Codes: {self.codes()}")
         except Exception as e:
             print(f"PublicClient failed to create symbol: {e}")
+            raise
         else:
             self._log("done.")
 
@@ -168,12 +177,15 @@ class Proxy(PublicClientInterface, AuthClientInterface):
             print(
                 f"NetworkError - PublicClient failed to retrieve price for {symbol}: {e}"
             )
+            raise
         except ExchangeError as e:
             print(
                 f"ExchangeError - PublicClient failed to retrieve price for {symbol}: {e}"
             )
+            raise
         except Exception as e:
             print(f"PublicClient failed to retrieve price for {symbol}: {e}")
+            raise
         else:
             self._log("done.")
 
@@ -206,14 +218,17 @@ class Proxy(PublicClientInterface, AuthClientInterface):
             print(
                 f"NetworkError - PublicClient failed to retrieve candlestick data for {symbol} on timeframe {tf} since {since}: {e}"
             )
+            raise
         except ExchangeError as e:
             print(
                 f"ExchangeError - PublicClient failed to retrieve candlestick data for {symbol} on timeframe {tf} since {since}: {e}"
             )
+            raise
         except Exception as e:
             print(
                 f"PublicClient failed to retrieve candlestick data for {symbol} on timeframe {tf} since {since}: {e}"
             )
+            raise
         else:
             self._log("done.")
 
@@ -238,12 +253,15 @@ class Proxy(PublicClientInterface, AuthClientInterface):
             print(
                 f"NetworkError - PublicClient failed to retrieve exchange status: {e}"
             )
+            raise
         except ExchangeError as e:
             print(
                 f"ExchangeError - PublicClient failed to retrieve exchange status: {e}"
             )
+            raise
         except Exception as e:
             print(f"PublicClient failed to retrieve exchange status: {e}")
+            raise
         else:
             self._log("done.")
 
@@ -271,12 +289,15 @@ class Proxy(PublicClientInterface, AuthClientInterface):
             print(
                 f"NetworkError - PublicClient failed to retrieve orderbook for {symbol}: {e}"
             )
+            raise
         except ExchangeError as e:
             print(
                 f"ExchangeError - PublicClient failed to retrieve orderbook for {symbol}: {e}"
             )
+            raise
         except Exception as e:
             print(f"PublicClient failed to retrieve orderbook for {symbol}: {e}")
+            raise
         else:
             self._log("done.")
 
@@ -292,7 +313,7 @@ class Proxy(PublicClientInterface, AuthClientInterface):
             code (str): Market code (ex. 'spot')
 
         Raises:
-            InvalidCodeError: Codes may be found by calling proxy.codes()
+            InvalidCodeError: Wrong code
             NetworkError: AuthClient failed to retrieve balance for {currency} on {code} market
             ExchangeError: AuthClient failed to retrieve balance for {currency} on {code} market
             Exception: AuthClient failed to retrieve balance for {currency} on {code} market
@@ -302,29 +323,35 @@ class Proxy(PublicClientInterface, AuthClientInterface):
         """
         balance = None
         try:
+            if code not in self.codes():
+                raise InvalidCodeError()
+
             self._log(
                 f"Attempting to retrieve the balance for {currency} on {code} market",
                 end=", ",
             )
             balance = self._auth_client.balance(currency, code)
         except InvalidCodeError as e:
-            print(f"PublicClient failed to create symbol: {e}")
+            print(f"AuthClient failed to retrieve balance for {currency}: {e}")
             print(
                 "\nPlease call proxy.codes() in order to retrieve the current market codes that are offered\n"
             )
-            self.codes()
+            print(f"Codes: {self.codes()}")
         except NetworkError as e:
             print(
                 f"NetworkError - AuthClient failed to retrieve balance for {currency} on {code} market: {e}"
             )
+            raise
         except ExchangeError as e:
             print(
                 f"ExchangeError - AuthClient failed to retrieve balance for {currency} on {code} market: {e}"
             )
+            raise
         except Exception as e:
             print(
                 f"AuthClient failed to retrieve balance for {currency} on {code} market: {e}"
             )
+            raise
         else:
             self._log("done.")
 
@@ -365,10 +392,13 @@ class Proxy(PublicClientInterface, AuthClientInterface):
             self._log(f"OrderClient retrieved", end=", ")
         except NetworkError as e:
             print(f"NetworkError - AuthClient failed to place order: {e}")
+            raise
         except ExchangeError as e:
             print(f"ExchangeError - AuthClient failed to place order: {e}")
+            raise
         except Exception as e:
             print(f"AuthClient failed to place order: {e}")
+            raise
         else:
             self._log("done.")
 
@@ -409,10 +439,13 @@ class Proxy(PublicClientInterface, AuthClientInterface):
             self._log(f"OrderClient retrieved", end=", ")
         except NetworkError as e:
             print(f"NetworkError - AuthClient failed to place order: {e}")
+            raise
         except ExchangeError as e:
             print(f"ExchangeError - AuthClient failed to place order: {e}")
+            raise
         except Exception as e:
             print(f"AuthClient failed to place order: {e}")
+            raise
         else:
             self._log("done.")
 
@@ -455,6 +488,7 @@ class Proxy(PublicClientInterface, AuthClientInterface):
             self._log(f"OrderClient retrieved", end=", ")
         except Exception as e:
             print(f"AuthClient failed to open long position: {e}")
+            raise
         else:
             self._log("done.")
 
@@ -499,6 +533,7 @@ class Proxy(PublicClientInterface, AuthClientInterface):
             self._log(f"OrderClient retrieved", end=", ")
         except Exception as e:
             print(f"AuthClient failed to open short position: {e}")
+            raise
         else:
             self._log("done.")
 
@@ -528,10 +563,13 @@ class Proxy(PublicClientInterface, AuthClientInterface):
             success = self._auth_client.leverage(amount, symbol)
         except NetworkError as e:
             print(f"NetworkError - AuthClient failed to modify leverage: {e}")
+            raise
         except ExchangeError as e:
             print(f"ExchangeError - AuthClient failed to modify leverage: {e}")
+            raise
         except Exception as e:
             print(f"AuthClient failed to modify leverage: {e}")
+            raise
         else:
             self._log("done.")
 
@@ -560,12 +598,15 @@ class Proxy(PublicClientInterface, AuthClientInterface):
             print(
                 f"NetworkError - AuthClient failed to retrieve position for {symbol}: {e}"
             )
+            raise
         except ExchangeError as e:
             print(
                 f"ExchangeError - AuthClient failed to retrieve position for {symbol}: {e}"
             )
+            raise
         except Exception as e:
             print(f"AuthClient failed to retrieve position for {symbol}: {e}")
+            raise
         else:
             self._log("done.")
 
@@ -594,12 +635,15 @@ class Proxy(PublicClientInterface, AuthClientInterface):
             print(
                 f"NetworkError - AuthClient failed to cancel order for {symbol} with id {id}: {e}"
             )
+            raise
         except ExchangeError as e:
             print(
                 f"ExchangeError - AuthClient failed to cancel order for {symbol} with id {id}: {e}"
             )
+            raise
         except Exception as e:
             print(f"AuthClient failed to cancel order for {symbol} with id {id}: {e}")
+            raise
         else:
             self._log("done.")
 
@@ -627,12 +671,15 @@ class Proxy(PublicClientInterface, AuthClientInterface):
             print(
                 f"NetworkError - AuthClient failed to retrieve orders for {symbol}: {e}"
             )
+            raise
         except ExchangeError as e:
             print(
                 f"ExchangeError - AuthClient failed to retrieve orders for {symbol}: {e}"
             )
+            raise
         except Exception as e:
             print(f"AuthClient failed to retrieve orders for {symbol}: {e}")
+            raise
         else:
             self._log("done.")
 

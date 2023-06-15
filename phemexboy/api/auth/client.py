@@ -3,7 +3,7 @@
 import os
 import ccxt
 
-from botboy import BotBoy
+from botboy.core import BotBoy
 from phemexboy.interfaces.auth.client_interface import AuthClientInterface
 from phemexboy.api.auth.order import OrderClient
 from phemexboy.api.auth.position import PositionClient
@@ -22,15 +22,12 @@ class AuthClient(AuthClientInterface):
                 "enableRateLimit": True,
             }
         )
-        self._bot = BotBoy(name="AuthBot")
 
-    def _worker(self, task: object, *args: tuple, wait: bool = True):
+    def _worker(self, task: object, *args):
         """Runs tasks on separate thread
 
         Args:
             task (object): Method to execute on separate thread
-            *args (list): Parameters for task
-            wait (bool, optional): Wait for execution to finish. Defaults to True.
 
         Raises:
             Exception: Any
@@ -40,12 +37,9 @@ class AuthClient(AuthClientInterface):
         """
         try:
             self._endpoint.load_markets(reload=True)
-            self._bot.task = task
-            if len(args) > 0:
-                self._bot.execute(*args, wait=wait)
-            else:
-                self._bot.execute(wait=wait)
-            return self._bot.result
+            worker = BotBoy(name='AuthWorker', task=task, params=args)
+            result = worker.execute()
+            return result
         except Exception:
             raise
 

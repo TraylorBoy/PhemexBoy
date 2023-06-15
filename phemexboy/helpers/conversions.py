@@ -8,14 +8,15 @@ def usdt_to_crypto(usdt_balance: float, price: float, percent: int):
 
     Args:
         usdt_balance (float): Amount of USDT currently in exchange wallet
-        price (float): Current price of crypto you want to convert to
+        price (object): Proxy
         percent (int): Percentage of USDT balance to convert
 
     Returns:
         Float: Converted crypto amount
     """
     amount = (usdt_balance / price) * (percent / 100)
-    return round(amount, 6)
+    # amt = (usdt_balance / price) * percent
+    return amount
 
 
 def stop_loss(price: float, percent: int, pos: str):

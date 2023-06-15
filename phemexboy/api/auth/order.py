@@ -32,7 +32,7 @@ class OrderClient(OrderClientInterface):
         for key in self._order.keys():
             out += f"{key}: {self._order[key]}\n"
 
-        out += f"Code: {self._code}\n"
+        out += f"code: {self._code}\n"
         return out
 
     def _log(self, msg: str, end: str = None):
@@ -73,6 +73,14 @@ class OrderClient(OrderClientInterface):
             self._state = state
             self._log("done.")
 
+    def requests(self):
+        """Returns a list of all request params
+
+        Returns:
+            List: Request params
+        """
+        return list(self._order.keys())
+
     def query(self, request: str):
         """Retrieve order information data
 
@@ -80,18 +88,26 @@ class OrderClient(OrderClientInterface):
             request (str): Type of data you want to retrieve from OrderClient
 
         Raises:
-            InvalidRequestError: Please print this object in order to see the correct request params
+            InvalidRequestError: OrderClient failed to retrieve data for {request}
 
         Returns:
             String: Requested order data
         """
-        if request not in list(self._order.keys()):
-            raise InvalidRequestError(
-                "Please print this object in order to see the correct request params"
+        data = None
+        try:
+            if request not in self.requests():
+                raise InvalidRequestError()
+
+            self._log(f"Retrieving order data based on {request}", end=", ")
+            data = self._order[request]
+        except InvalidRequestError:
+            print(
+                f"InvalidRequestError - OrderClient failed to retrieve data for {request}"
             )
-        self._log(f"Retrieving order data based on {request}", end=", ")
-        data = self._order[request]
-        self._log("done.")
+            print("Call requests() in order to retrieve valid params")
+            print(f"Params: {self.requests()}")
+        else:
+            self._log("done.")
         return data
 
     def edit(
@@ -110,11 +126,10 @@ class OrderClient(OrderClientInterface):
             tp_percent: Set take profit percent from price. Defaults to None.
 
         Raises:
-            InvalidCodeError: Codes may be found by calling proxy.codes()
             OrderTypeError: Order type must be limit in order to edit
-            NetworkError: AuthClient failed to place order
-            ExchangeError: AuthClient failed to place order
-            Exception: AuthClient failed to place order
+            NetworkError: OrderClient failed to edit order
+            ExchangeError: OrderClient failed to edit order
+            Exception: OrderClient failed to edit order
         """
         symbol = self.query("symbol")
         type = self.query("type")
@@ -184,13 +199,16 @@ class OrderClient(OrderClientInterface):
             print(
                 "\nPlease call proxy.codes() in order to retrieve the current market codes that are offered\n"
             )
-            print(self._pub_client.codes())
+            print(f"Codes: {self._pub_client.codes()}")
         except NetworkError as e:
-            print(f"NetworkError - AuthClient failed to place order: {e}")
+            print(f"NetworkError - OrderClient failed to edit order: {e}")
+            raise
         except ExchangeError as e:
-            print(f"ExchangeError - AuthClient failed to place order: {e}")
+            print(f"ExchangeError - OrderClient failed to edit order: {e}")
+            raise
         except Exception as e:
-            print(f"AuthClient failed to place order: {e}")
+            print(f"OrderClient failed to edit order: {e}")
+            raise
         else:
             self._order = deepcopy(client._order)
             self._log("done.")
@@ -200,9 +218,9 @@ class OrderClient(OrderClientInterface):
 
         Raises:
             OrderTypeError: Order type must be limit in order to cancel
-            NetworkError: AuthClient failed to cancel order for {symbol} with id {id}
-            ExchangeError: AuthClient failed to cancel order for {symbol} with id {id}
-            Exception: AuthClient failed to cancel order for {symbol} with id {id}
+            NetworkError: OrderClient failed to cancel order for {symbol} with id {id}
+            ExchangeError: OrderClient failed to cancel order for {symbol} with id {id}
+            Exception: OrderClient failed to cancel order for {symbol} with id {id}
         """
         type = self.query("type")
         if type == "market":
@@ -217,14 +235,17 @@ class OrderClient(OrderClientInterface):
             data = self._client.cancel(id, symbol)
         except NetworkError as e:
             print(
-                f"NetworkError - AuthClient failed to cancel order for {symbol} with id {id}: {e}"
+                f"NetworkError - OrderClient failed to cancel order for {symbol} with id {id}: {e}"
             )
+            raise
         except ExchangeError as e:
             print(
-                f"ExchangeError - AuthClient failed to cancel order for {symbol} with id {id}: {e}"
+                f"ExchangeError - OrderClient failed to cancel order for {symbol} with id {id}: {e}"
             )
+            raise
         except Exception as e:
-            print(f"AuthClient failed to cancel order for {symbol} with id {id}: {e}")
+            print(f"OrderClient failed to cancel order for {symbol} with id {id}: {e}")
+            raise
         else:
             self._log("done.")
         finally:
@@ -244,9 +265,9 @@ class OrderClient(OrderClientInterface):
         """Check if order is still open
 
         Raises:
-            NetworkError: AuthClient failed to retrieve orders for {symbol}
-            ExchangeError: AuthClient failed to retrieve orders for {symbol}
-            Exception: AuthClient failed to retrieve orders for {symbol}
+            NetworkError: OrderClient failed to check pending state
+            ExchangeError: OrderClient failed to check pending state
+            Exception: OrderClient failed to check pending state
 
         Returns:
             Bool: Order is still open
@@ -259,15 +280,14 @@ class OrderClient(OrderClientInterface):
             self._log(f"Attempting to retrieve orders for {symbol}", end=", ")
             data = self._client.orders(symbol)
         except NetworkError as e:
-            print(
-                f"NetworkError - AuthClient failed to retrieve orders for {symbol}: {e}"
-            )
+            print(f"NetworkError - OrderClient failed to check pending state: {e}")
+            raise
         except ExchangeError as e:
-            print(
-                f"ExchangeError - AuthClient failed to retrieve orders for {symbol}: {e}"
-            )
+            print(f"ExchangeError - OrderClient failed to check pending state: {e}")
+            raise
         except Exception as e:
-            print(f"AuthClient failed to retrieve orders for {symbol}: {e}")
+            print(f"OrderClient failed to check pending state: {e}")
+            raise
         else:
             self._log("done.")
         finally:
@@ -283,9 +303,9 @@ class OrderClient(OrderClientInterface):
         """Check if order was filled or cancelled
 
         Raises:
-            NetworkError: AuthClient failed to retrieve orders for {symbol}
-            ExchangeError: AuthClient failed to retrieve orders for {symbol}
-            Exception: AuthClient failed to retrieve orders for {symbol}
+            NetworkError: OrderClient failed to check closed state
+            ExchangeError: OrderClient failed to check closed state
+            Exception: OrderClient failed to check closed state
 
         Returns:
             Bool: Order was successfully filled
@@ -299,15 +319,14 @@ class OrderClient(OrderClientInterface):
             self._log(f"Attempting to retrieve orders for {symbol}", end=", ")
             data = self._client.orders(symbol)
         except NetworkError as e:
-            print(
-                f"NetworkError - AuthClient failed to retrieve orders for {symbol}: {e}"
-            )
+            print(f"NetworkError - OrderClient failed to check closed state: {e}")
+            raise
         except ExchangeError as e:
-            print(
-                f"ExchangeError - AuthClient failed to retrieve orders for {symbol}: {e}"
-            )
+            print(f"ExchangeError - OrderClient failed to check closed state: {e}")
+            raise
         except Exception as e:
-            print(f"AuthClient failed to retrieve orders for {symbol}: {e}")
+            print(f"OrderClient failed to check closed state: {e}")
+            raise
         else:
             self._log("done.")
         finally:
@@ -338,10 +357,9 @@ class OrderClient(OrderClientInterface):
 
         Raises:
             OrderTypeError: Order type must be limit in order to retry
-            InsufficientFundsError: More than likely tried to place order that was already closed
-            NetworkError: PublicClient failed to retrieve price
-            ExchangeError: PublicClient failed to retrieve price
-            Exception: PublicClient failed to retrieve price
+            NetworkError: OrderClient failed to retry
+            ExchangeError: OrderClient failed to retry
+            Exception: OrderClient failed to retry
 
         Returns:
             Bool: Order successfully placed
@@ -377,15 +395,14 @@ class OrderClient(OrderClientInterface):
             )
             pass
         except NetworkError as e:
-            print(
-                f"NetworkError - PublicClient failed to retrieve price for {symbol}: {e}"
-            )
+            print(f"NetworkError - OrderClient failed to retry: {e}")
+            raise
         except ExchangeError as e:
-            print(
-                f"ExchangeError - PublicClient failed to retrieve price for {symbol}: {e}"
-            )
+            print(f"ExchangeError - OrderClient failed to retry: {e}")
+            raise
         except Exception as e:
-            print(f"PublicClient failed to retrieve price for {symbol}: {e}")
+            print(f"OrderClient failed to retry: {e}")
+            raise
         else:
             self._log("Order placed, done.")
         finally:
@@ -414,7 +431,9 @@ class OrderClient(OrderClientInterface):
 
         Raises:
             OrderTypeError: Order type must be limit in order to close
-            Exception: Any
+            NetworkError: OrderClient failed to close order
+            ExchangeError: OrderClient failed to close order
+            Exception: OrderClient failed to close order
 
         Returns:
             Bool: Order successfully filled
@@ -447,7 +466,14 @@ class OrderClient(OrderClientInterface):
 
             if not closed and self.pending():
                 self.cancel()
-        except Exception:
+        except NetworkError as e:
+            print(f"NetworkError - OrderClient failed to close order: {e}")
+            raise
+        except ExchangeError as e:
+            print(f"ExchangeError - OrderClient failed to close order: {e}")
+            raise
+        except Exception as e:
+            print(f"OrderClient failed to close order: {e}")
             raise
         else:
             self._log("done.")

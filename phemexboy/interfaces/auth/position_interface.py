@@ -14,6 +14,15 @@ class PositionClientInterface(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def requests(self):
+        """Returns a list of all request params
+
+        Raises:
+            NotImplementedError: Must implement before subclassing
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def query(self, request: str):
         """Retrieve position information data
 

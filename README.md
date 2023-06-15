@@ -18,7 +18,7 @@ pip install phemexboy
 ## Usage
 ### Instantiate Proxy with API Key and Secret obtained from Phemex
 - Uses *python-dotenv* package for security
-- Simply place your api key and secret in a .env file in your root folder (at to .gitignore)
+- Simply place your api key and secret in a .env file in your root folder (add to .gitignore)
 ```
 from phemexboy.proxy import Proxy
 
