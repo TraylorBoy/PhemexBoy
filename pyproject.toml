@@ -9,7 +9,7 @@ readme = "README.md"
 license = {file = "LICENSE"}
 classifiers = ["License :: OSI Approved :: MIT License"]
 dynamic = ["version", "description"]
-dependencies = ["ccxt", "botboy"]
+dependencies = ["ccxt", "botboy", "python-dotenv"]
 
 [project.urls]
 Home = "https://github.com/TraylorBoy/PhemexBoy"

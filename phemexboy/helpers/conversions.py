@@ -15,7 +15,6 @@ def usdt_to_crypto(usdt_balance: float, price: float, percent: int):
         Float: Converted crypto amount
     """
     amount = (usdt_balance / price) * (percent / 100)
-    # amt = (usdt_balance / price) * percent
     return amount
 
 

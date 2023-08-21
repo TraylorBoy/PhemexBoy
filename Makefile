@@ -1,3 +1,6 @@
+test-client:
+	python3 -m unittest -f -v phemexboy/tests/client_tests.py
+	
 test-pub:
 	python3 -m unittest -f -v phemexboy/tests/public_tests.py
 

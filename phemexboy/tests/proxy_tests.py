@@ -108,8 +108,9 @@ class TestProxy(unittest.TestCase):
 
         # Limit Buy
         type = "limit"
+        price = 1000
         usdt_bal = proxy.balance(currency="USDT", code="spot")
-        amount, price = usdt_to_crypto(usdt_balance=usdt_bal, price=proxy.price(), percent=100)
+        amount = usdt_to_crypto(usdt_balance=usdt_bal, price=price, percent=100)
 
         order = proxy.buy(symbol=symbol, type=type, amount=amount, price=price)
         self.assertIsInstance(order, OrderClientInterface)

@@ -138,6 +138,11 @@ class OrderClient(OrderClientInterface):
         if type == "market":
             raise OrderTypeError("Order type must be limit in order to edit")
 
+        if side == 'buy':
+            price = price - 0.01
+        else:
+            price = price + 0.01
+
         self._log(
             f"Attempting to edit order with {amount} amount at price {price}", end=", "
         )
@@ -160,7 +165,7 @@ class OrderClient(OrderClientInterface):
             tp = (
                 take_profit(price, tp_percent, "long")
                 if side == "buy"
-                else stop_loss(price, tp_percent, "short")
+                else take_profit(price, tp_percent, "short")
             )
 
         # Retrieve new order data from OrderClient
@@ -232,7 +237,8 @@ class OrderClient(OrderClientInterface):
         try:
             self._log(f"Attempting to cancel order for {symbol} with id {id}", end=", ")
             # Cancel order
-            data = self._client.cancel(id, symbol)
+            if not self.closed():
+                data = self._client.cancel(id, symbol)
         except NetworkError as e:
             print(
                 f"NetworkError - OrderClient failed to cancel order for {symbol} with id {id}: {e}"
@@ -342,7 +348,6 @@ class OrderClient(OrderClientInterface):
 
     def retry(
         self,
-        wait: int = 2,
         price: float = None,
         sl_percent: int = None,
         tp_percent: int = None,
@@ -350,7 +355,6 @@ class OrderClient(OrderClientInterface):
         """Ensure limit order was successfully placed at current ask price, if None then will use current ask price
 
         Args:
-            wait (int): The amount of time to wait until retry. Defaults to 2 seconds.
             price (float): Price to retry order at. Defaults to None.
             sl_percent: Set stop loss percent from price. Defaults to None.
             tp_percent: Set take profit percent from price. Defaults to None.
@@ -384,11 +388,11 @@ class OrderClient(OrderClientInterface):
                     tp_percent=tp_percent,
                 ) if price else self.edit(
                     amount=amount,
-                    price=self._pub_client.price(symbol=symbol) - 0.1,
+                    price=self._pub_client.price(symbol=symbol),
                     sl_percent=sl_percent,
                     tp_percent=tp_percent,
                 )
-                sleep(wait)
+
         except InsufficientFunds:
             print(
                 "InsufficientFundsError, more than likely tried to place order that was already closed"
@@ -413,7 +417,7 @@ class OrderClient(OrderClientInterface):
     def close(
         self,
         retry: bool = False,
-        wait: int = 2,
+        wait: int = 1,
         price: float = None,
         tries: int = 1,
         sl_percent: int = None,
@@ -459,8 +463,7 @@ class OrderClient(OrderClientInterface):
 
                 if retry and not self.closed():
                     self.retry(
-                        price=price, sl_percent=sl_percent, tp_percent=tp_percent
-                    )
+                        price=price, sl_percent=sl_percent, tp_percent=tp_percent)
 
                 i += 1
 
