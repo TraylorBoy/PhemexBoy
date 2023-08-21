@@ -1,5 +1,4 @@
 """API Wrapper Module"""
-__version__ = "2.0.0"
 
 from ccxt import NetworkError, ExchangeError
 
