@@ -688,7 +688,7 @@ class Proxy(PublicClientInterface, AuthClientInterface):
 
     def verbose(self):
         """Turn on logging"""
-        self._verbose = False
+        self._verbose = True
 
     def silent(self):
         """Turn off logging"""

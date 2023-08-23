@@ -172,7 +172,7 @@ class PositionClient(PositionClientInterface):
         else:
             self._log("Position closed, done.")
         finally:
-            if self._check_closed():
+            if self.closed():
                 self._update(state="closed")
 
     def closed(self):
@@ -181,7 +181,7 @@ class PositionClient(PositionClientInterface):
         Returns:
             Bool: Position successfully closed or not
         """
-        return self._state == "closed"
+        return self._check_closed()
 
     def verbose(self):
         """Turn on logging"""
